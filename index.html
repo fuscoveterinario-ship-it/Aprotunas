@@ -584,8 +584,10 @@ async function paintAssocSub(a){
         {h:'Vencimento',f:r=>dBR(r.vencimento)},
         {h:'Pagamento',f:r=>dBR(r.data_pagamento)},
         {h:'Situação',f:r=>stTag(r)},
+        {h:'Comprovante',f:r=>r.comprovante_path?`<button class="linkbtn" data-comp="${r.id}">📎 Baixar</button>`:'—'},
         ...(isGestor()?[{act:true,f:r=>`${r.data_pagamento?`<button class="linkbtn" data-reab="${r.id}">Reabrir</button>`:`<button class="linkbtn" data-pag="${r.id}">Dar baixa</button>`}<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}]:[])
       ],rows,{empty:'Nenhuma contribuição.'})}</div></div>`;
+    $$('[data-comp]',p).forEach(b=>b.onclick=()=>baixarArquivo(rows.find(x=>x.id===b.dataset.comp).comprovante_path));
     if(isGestor()){
       const fields=[{key:'tipo',label:'Tipo',type:'select',required:true,options:[{value:'mensalidade',label:'Mensalidade'},{value:'anuidade',label:'Anuidade'},{value:'outro',label:'Outro'}],default:'mensalidade'},
         {key:'competencia',label:'Competência (mês)',type:'date',help:'Use o dia 01 do mês de referência'},
@@ -594,8 +596,9 @@ async function paintAssocSub(a){
         {key:'data_pagamento',label:'Data de pagamento',type:'date',help:'Deixe em branco se ainda não pago'},
         {key:'forma_pagamento',label:'Forma de pagamento'},
         {key:'descricao',label:'Descrição',type:'textarea',full:true}];
-      $('#addCon').onclick=()=>openForm({title:'Lançar contribuição',fields,onSave:async o=>{o.associado_id=a.id;const{error}=await sb.from('aprotunas_contribuicao').insert(o);if(error)throw error;toast('Lançado.');paintAssocSub(a);}});
-      $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar contribuição',fields,values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_contribuicao').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintAssocSub(a);}});});
+      const compHTML=r=>`<div class="field full"><label>Comprovante de pagamento (PDF/imagem)</label><input class="inp" type="file" id="compFile" accept=".pdf,image/*"><div style="font-size:11.5px;color:var(--muted);margin-top:4px">${r&&r.comprovante_path?'Já há um comprovante anexado — envie outro para substituir.':'Opcional.'}</div></div>`;
+      $('#addCon').onclick=()=>openForm({title:'Lançar contribuição',fields,extraHTML:compHTML(),onSave:async o=>{o.associado_id=a.id;const{data:ins,error}=await sb.from('aprotunas_contribuicao').insert(o).select().single();if(error)throw error;const f=$('#compFile')?.files[0];if(f&&ins)await uploadComprovante(a.id,ins.id,f);toast('Lançado.');paintAssocSub(a);}});
+      $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar contribuição',fields,values:r,extraHTML:compHTML(r),onSave:async o=>{const{error}=await sb.from('aprotunas_contribuicao').update(o).eq('id',r.id);if(error)throw error;const f=$('#compFile')?.files[0];if(f)await uploadComprovante(a.id,r.id,f);toast('Salvo.');paintAssocSub(a);}});});
       $$('[data-pag]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_contribuicao').update({data_pagamento:today()}).eq('id',b.dataset.pag);toast('Baixa registrada.');paintAssocSub(a);});
       $$('[data-reab]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_contribuicao').update({data_pagamento:null}).eq('id',b.dataset.reab);paintAssocSub(a);});
       $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir contribuição?',async()=>{await sb.from('aprotunas_contribuicao').delete().eq('id',b.dataset.del);paintAssocSub(a);}));
@@ -609,6 +612,19 @@ async function uploadDoc(assocId,docId,file){
   const {error}=await sb.storage.from('aprotunas-docs').upload(path,file,{upsert:true});
   if(error){ toast('Falha no upload: '+error.message,true); return; }
   await sb.from('aprotunas_documento').update({arquivo_path:path}).eq('id',docId);
+}
+async function uploadComprovante(assocId,contribId,file){
+  const ext=(file.name.split('.').pop()||'pdf');
+  const path=`${assocId}/contrib/${contribId}.${ext}`;
+  const {error}=await sb.storage.from('aprotunas-docs').upload(path,file,{upsert:true});
+  if(error){ toast('Falha no upload do comprovante: '+error.message,true); return; }
+  await sb.from('aprotunas_contribuicao').update({comprovante_path:path}).eq('id',contribId);
+}
+async function baixarArquivo(path){
+  if(!path){ toast('Sem arquivo',true); return; }
+  const {data,error}=await sb.storage.from('aprotunas-docs').createSignedUrl(path,120);
+  if(error){ toast('Erro ao abrir arquivo',true); return; }
+  window.open(data.signedUrl,'_blank');
 }
 
 /* ============================================================
@@ -1212,8 +1228,10 @@ ROUTES['minhas-contribuicoes'] = async (v)=>{
   const stTag=r=>r.data_pagamento?'<span class="tag ok">Pago</span>':(r.vencimento&&r.vencimento<hoje?'<span class="tag red">Atrasado</span>':'<span class="tag amber">Em aberto</span>');
   v.innerHTML=`<div class="page-head"><h2>Minhas contribuições</h2><div class="spacer"></div><span style="font-size:13px;color:var(--muted)">Em aberto: <b style="color:var(--red)">${BRL(aberto)}</b></span></div>
     <div class="panel"><div class="panel-body flush">${tbl([
-      {h:'Competência',f:r=>r.competencia?dBR(r.competencia).slice(3):'—'},{h:'Tipo',f:r=>esc(r.tipo)},{h:'Valor',num:true,f:r=>BRL(r.valor)},{h:'Vencimento',f:r=>dBR(r.vencimento)},{h:'Situação',f:r=>stTag(r)}
+      {h:'Competência',f:r=>r.competencia?dBR(r.competencia).slice(3):'—'},{h:'Tipo',f:r=>esc(r.tipo)},{h:'Valor',num:true,f:r=>BRL(r.valor)},{h:'Vencimento',f:r=>dBR(r.vencimento)},{h:'Situação',f:r=>stTag(r)},
+      {h:'Comprovante',f:r=>r.comprovante_path?`<button class="linkbtn" data-comp="${r.id}">📎 Baixar</button>`:'—'}
     ],rows,{empty:'Nenhuma contribuição.'})}</div></div>`;
+  $$('[data-comp]',v).forEach(b=>b.onclick=()=>baixarArquivo(rows.find(x=>x.id===b.dataset.comp).comprovante_path));
 };
 
 /* ================= START ================= */
