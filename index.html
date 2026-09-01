@@ -653,7 +653,7 @@ async function paintEstoque(){
         {h:'Produtor',f:r=>esc(assocNome(r.associado_id))},
         {h:'Produto',f:r=>esc(prodNome(r.produto_id))},
         {h:'Qtd',num:true,f:r=>`${NUM(r.quantidade)} ${esc(r.unidade||'')}`},
-        {h:'Valor',num:true,f:r=>BRL(r.valor_total)},
+        {h:'Peso/Gramagem',f:r=>esc(r.peso||'—')},
         {h:'Projeto',f:r=>r.projeto_id?`<span class="tag blue">${esc(projNome(r.projeto_id))}</span>`:'—'},
         {act:true,f:r=>`<button class="linkbtn" data-lbl="${r.id}">🏷️ Etiqueta</button><button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
       ],rows,{empty:'Nenhum recebimento registrado.'})}</div></div>`;
@@ -663,8 +663,7 @@ async function paintEstoque(){
       {key:'produto_id',label:'Produto',type:'select',required:true,options:(CACHE.produtos||[]).map(x=>({value:x.id,label:x.nome}))},
       {key:'quantidade',label:'Quantidade',type:'number',step:'0.001',required:true},
       {key:'unidade',label:'Unidade',type:'select',options:['kg','un','dz','L','mç','t'].map(u=>({value:u,label:u})),default:'kg'},
-      {key:'peso',label:'Peso (kg)',type:'number',step:'0.001'},
-      {key:'valor_unitario',label:'Valor unitário (R$)',type:'number',step:'0.0001'},
+      {key:'peso',label:'Peso / Gramagem',type:'text',placeholder:'ex.: 300g, 500g, 1,5 kg'},
       {key:'projeto_id',label:'Projeto',type:'select',options:(CACHE.projetos||[]).map(x=>({value:x.id,label:x.nome}))},
       {key:'observacao',label:'Observação',type:'textarea',full:true},
     ];
@@ -843,7 +842,7 @@ function abrirEtiqueta(r,qrSrc){
        ${linha('Produtor',esc(assocNome(r.associado_id)))}
        ${linha('Produto',esc(prodNome(r.produto_id)))}
        ${linha('Quantidade',NUM(r.quantidade)+' '+esc(prodUnid(r.produto_id)))}
-       ${r.peso?linha('Peso',NUM(r.peso)+' kg'):''}
+       ${r.peso?linha('Peso / Gramagem',esc(r.peso)):''}
        ${linha('Data',dBR(r.data))}
        ${r.projeto_id?linha('Projeto',esc(projNome(r.projeto_id))):''}
      </table>
@@ -1082,11 +1081,11 @@ async function runRelatorio(id,title){
     relTable(title,[{h:'Produto',f:r=>esc(r.nome)},{h:'Un.',f:r=>esc(r.unidade)},{h:'Inicial',num:true,f:r=>NUM(r.estoque_inicial)},{h:'Entradas',num:true,f:r=>NUM(r.entradas)},{h:'Saídas',num:true,f:r=>NUM(r.saidas)},{h:'Saldo',num:true,f:r=>NUM(r.saldo)}],data);
   }
   else if(id==='prod_receb'){
-    const {data}=await sb.from('aprotunas_recebimento').select('associado_id,quantidade,valor_total');
+    const {data}=await sb.from('aprotunas_recebimento').select('associado_id,quantidade');
     await getAssociados();
-    const map={}; (data||[]).forEach(x=>{const m=map[x.associado_id]=map[x.associado_id]||{q:0,v:0};m.q+=Number(x.quantidade||0);m.v+=Number(x.valor_total||0);});
-    const rows=Object.keys(map).map(k=>({nome:assocNome(k),...map[k]})).sort((a,b)=>b.v-a.v);
-    relTable(title,[{h:'Produtor',f:r=>esc(r.nome)},{h:'Qtd total',num:true,f:r=>NUM(r.q),raw:r=>r.q},{h:'Valor total',num:true,f:r=>BRL(r.v),raw:r=>r.v}],rows);
+    const map={}; (data||[]).forEach(x=>{const m=map[x.associado_id]=map[x.associado_id]||{q:0,n:0};m.q+=Number(x.quantidade||0);m.n+=1;});
+    const rows=Object.keys(map).map(k=>({nome:assocNome(k),...map[k]})).sort((a,b)=>b.q-a.q);
+    relTable(title,[{h:'Produtor',f:r=>esc(r.nome)},{h:'Recebimentos',num:true,f:r=>r.n,raw:r=>r.n},{h:'Qtd total',num:true,f:r=>NUM(r.q),raw:r=>r.q}],rows);
   }
   else if(id==='prod_rastreio'){
     await Promise.all([getAssociados(),getProdutos(),getProjetos()]);
