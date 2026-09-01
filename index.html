@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão APROTUNAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6f1; --surface:#ffffff; --surface2:#fbfcf9;
+  --green:#2e7d32; --green-d:#1f5c24; --green-l:#e8f2e4;
+  --earth:#8d6e3a; --amber:#e0a938;
+  --text:#22281f; --muted:#6b7565; --line:#e2e7db; --line-d:#cdd5c3;
+  --red:#c0392b; --red-l:#fbe9e7; --blue:#2c6e8f; --ok:#2e7d32;
+  --radius:12px; --shadow:0 1px 3px rgba(30,50,20,.08),0 1px 2px rgba(30,50,20,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0;font-weight:600}
+a{color:var(--green)}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px}
+.hidden{display:none!important}
+
+/* Login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:linear-gradient(135deg,#2e7d32 0%,#1f5c24 100%)}
+#login .card{background:var(--surface);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.2);
+  padding:36px 32px;width:100%;max-width:400px}
+#login .brand{text-align:center;margin-bottom:22px}
+#login .brand .logo{width:64px;height:64px;border-radius:16px;background:var(--green-l);
+  display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px}
+#login h1{font-size:22px;color:var(--green-d)}
+#login .sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.inp{width:100%;padding:10px 12px;border:1px solid var(--line-d);border-radius:9px;background:var(--surface2);outline:none}
+.inp:focus{border-color:var(--green);background:#fff;box-shadow:0 0 0 3px var(--green-l)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border:none;border-radius:9px;
+  background:var(--green);color:#fff;font-weight:600;font-size:14px}
+.btn:hover{background:var(--green-d)}
+.btn.block{width:100%;padding:12px}
+.btn.ghost{background:transparent;color:var(--green);border:1px solid var(--line-d)}
+.btn.ghost:hover{background:var(--green-l)}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.btn.danger{background:var(--red)} .btn.danger:hover{background:#96271b}
+.btn.amber{background:var(--amber);color:#3a2c05} .btn.amber:hover{background:#c9932c}
+.err{color:var(--red);font-size:12.5px;margin-top:8px;min-height:16px}
+
+/* App shell */
+#app{min-height:100vh;display:flex;flex-direction:column}
+header.top{background:var(--surface);border-bottom:1px solid var(--line);padding:0 20px;
+  display:flex;align-items:center;gap:14px;height:58px;position:sticky;top:0;z-index:30}
+header .logo{width:36px;height:36px;border-radius:9px;background:var(--green-l);display:flex;align-items:center;justify-content:center;font-size:19px}
+header .title{font-family:Fraunces,serif;font-weight:600;font-size:16px;color:var(--green-d);line-height:1.1}
+header .title small{display:block;font-family:Inter;font-weight:500;font-size:11px;color:var(--muted)}
+header .spacer{flex:1}
+.pill{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--green-l);color:var(--green-d);font-weight:600}
+.pill.assoc{background:#eef3f8;color:var(--blue)}
+.userbox{display:flex;align-items:center;gap:9px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+
+nav.tabs{background:var(--surface);border-bottom:1px solid var(--line);padding:0 12px;display:flex;gap:2px;overflow-x:auto;position:sticky;top:58px;z-index:20}
+nav.tabs button{background:none;border:none;padding:13px 15px;color:var(--muted);font-weight:600;font-size:13.5px;
+  border-bottom:2.5px solid transparent;white-space:nowrap}
+nav.tabs button:hover{color:var(--text)}
+nav.tabs button.active{color:var(--green-d);border-bottom-color:var(--green)}
+
+main{flex:1;padding:22px;max-width:1200px;width:100%;margin:0 auto}
+.page-head{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.page-head h2{font-size:20px}
+.page-head .spacer{flex:1}
+.breadcrumb{font-size:12.5px;color:var(--muted);margin-bottom:6px;cursor:pointer}
+.breadcrumb:hover{color:var(--green)}
+
+/* Cards & grid */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.stat .k{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.stat .v{font-size:26px;font-weight:700;margin-top:6px;font-family:Fraunces,serif;color:var(--green-d)}
+.stat .v.red{color:var(--red)} .stat .v.amber{color:#b57e0e} .stat .v.blue{color:var(--blue)}
+.stat .foot{font-size:11.5px;color:var(--muted);margin-top:3px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.panel-head{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.panel-head h3{font-size:15px}
+.panel-head .spacer{flex:1}
+.panel-body{padding:16px}
+.panel-body.flush{padding:0}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:10px 14px;background:var(--surface2);color:var(--muted);font-weight:600;font-size:11.5px;
+  text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--line);position:sticky;top:0}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.clk{cursor:pointer}
+tbody tr.clk:hover{background:var(--green-l)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.act{text-align:right;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+.tag.ok{background:var(--green-l);color:var(--green-d)}
+.tag.red{background:var(--red-l);color:var(--red)}
+.tag.amber{background:#fdf3dd;color:#946b0d}
+.tag.grey{background:#eef0eb;color:var(--muted)}
+.tag.blue{background:#eaf2f7;color:var(--blue)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty .ic{font-size:32px;opacity:.4}
+
+.linkbtn{background:none;border:none;color:var(--green);font-weight:600;font-size:12.5px;padding:4px 6px;cursor:pointer}
+.linkbtn:hover{text-decoration:underline}
+.linkbtn.red{color:var(--red)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.filters .inp{width:auto;min-width:150px;padding:8px 10px}
+.searchbox{position:relative;flex:1;min-width:180px;max-width:320px}
+.searchbox .inp{width:100%;padding-left:32px}
+.searchbox::before{content:"🔍";position:absolute;left:10px;top:9px;font-size:13px;opacity:.5}
+
+/* Subtabs */
+.subtabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.subtabs button{background:none;border:none;padding:9px 13px;color:var(--muted);font-weight:600;font-size:13px;border-bottom:2px solid transparent}
+.subtabs button.active{color:var(--green-d);border-bottom-color:var(--green)}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(20,30,15,.45);display:flex;align-items:flex-start;justify-content:center;
+  padding:40px 16px;z-index:100;overflow-y:auto}
+.modal{background:var(--surface);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:100%;max-width:560px;margin:auto}
+.modal.wide{max-width:760px}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.modal-head h3{font-size:17px}
+.modal-head .x{margin-left:auto;background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+.modal-body{padding:20px;max-height:65vh;overflow-y:auto}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.dl{display:grid;grid-template-columns:150px 1fr;gap:8px 16px;font-size:13.5px}
+.dl dt{color:var(--muted);font-weight:600}
+.dl dd{margin:0}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;
+  padding:12px 20px;border-radius:10px;font-size:13.5px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:.25s;pointer-events:none}
+#toast.show{opacity:1}
+#toast.err{background:var(--red)}
+.loading{padding:50px;text-align:center;color:var(--muted)}
+.spinner{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}.dl{grid-template-columns:1fr}main{padding:14px}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div class="card">
+    <div class="brand">
+      <div class="logo">🌱</div>
+      <h1>Gestão APROTUNAS</h1>
+      <div class="sub">Associação dos Produtores de Tunas do Paraná</div>
+    </div>
+    <form id="loginForm">
+      <div class="field"><label>E-mail</label>
+        <input class="inp" type="email" id="loginEmail" autocomplete="username" required></div>
+      <div class="field"><label>Senha</label>
+        <input class="inp" type="password" id="loginPass" autocomplete="current-password" required></div>
+      <button class="btn block" type="submit" id="loginBtn">Entrar</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="logo">🌱</div>
+    <div class="title">Gestão APROTUNAS<small>Associação dos Produtores de Tunas do Paraná</small></div>
+    <div class="spacer"></div>
+    <div class="userbox">
+      <span class="pill" id="rolePill">—</span>
+      <div class="avatar" id="avatar">?</div>
+      <button class="btn ghost sm" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+  <main id="view"><div class="loading"><div class="spinner"></div>Carregando…</div></main>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ================= CONFIG ================= */
+const SB_URL = "https://vmzmthtsxiwwjtpupclv.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtem10aHRzeGl3d2p0cHVwY2x2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTI3NDIsImV4cCI6MjEwMDkyODc0Mn0.QrM7tjRONWwuFwJ3yIOlPor45-bQGuM4OTxMwVpuNoA";
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+/* ================= STATE ================= */
+let ME = null;          // linha aprotunas_usuario
+let TAB = "inicio";
+let CACHE = {};         // caches leves (produtos, projetos)
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+
+/* ================= HELPERS ================= */
+const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const BRL = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const NUM = n => (Number(n)||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
+function dBR(d){ if(!d) return "—"; const p=String(d).slice(0,10).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; }
+function today(){ return new Date().toISOString().slice(0,10); }
+function toast(msg,isErr){ const t=$('#toast'); t.textContent=msg; t.className='show'+(isErr?' err':''); setTimeout(()=>t.className='',2600); }
+function loading(el){ el.innerHTML='<div class="loading"><div class="spinner"></div>Carregando…</div>'; }
+async function db(table){ return sb.from(table); }
+function initials(name){ return (name||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+const isGestor = ()=> ME && (ME.papel==='gestor'||ME.papel==='diretoria');
+const isAssoc  = ()=> ME && ME.papel==='associado';
+
+/* ================= AUTH ================= */
+$('#loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const btn=$('#loginBtn'), err=$('#loginErr');
+  err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
+  const { error } = await sb.auth.signInWithPassword({ email:$('#loginEmail').value.trim(), password:$('#loginPass').value });
+  if(error){ err.textContent = error.message==='Invalid login credentials'?'E-mail ou senha inválidos.':error.message; btn.disabled=false; btn.textContent='Entrar'; return; }
+  await boot();
+});
+$('#logoutBtn').addEventListener('click', async ()=>{ await sb.auth.signOut(); location.reload(); });
+
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ $('#login').classList.remove('hidden'); $('#app').classList.add('hidden'); return; }
+  // carregar perfil
+  const { data:me, error } = await sb.from('aprotunas_usuario').select('*').eq('id',session.user.id).maybeSingle();
+  if(error || !me){ toast('Usuário sem perfil vinculado. Fale com o gestor.',true); await sb.auth.signOut(); location.reload(); return; }
+  ME = me;
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#avatar').textContent = initials(me.nome||me.email);
+  $('#rolePill').textContent = me.papel==='gestor'?'Gestor':me.papel==='diretoria'?'Diretoria':'Associado';
+  $('#rolePill').className = 'pill'+(isAssoc()?' assoc':'');
+  buildTabs();
+  go(isAssoc()?'meu-cadastro':'inicio');
+}
+
+/* ================= NAV ================= */
+const TABS_GESTOR = [
+  ['inicio','Início'],['associados','Associados'],['estoque','Recebimento & Estoque'],
+  ['financeiro','Financeiro'],['projetos','Projetos'],['relatorios','Relatórios'],['config','Configurações']
+];
+const TABS_ASSOC = [
+  ['meu-cadastro','Meu cadastro'],['meus-documentos','Meus documentos'],
+  ['minha-producao','Minha produção'],['minhas-contribuicoes','Minhas contribuições']
+];
+function buildTabs(){
+  const list = isAssoc()?TABS_ASSOC:TABS_GESTOR;
+  $('#tabs').innerHTML = list.map(([id,lbl])=>`<button data-tab="${id}">${lbl}</button>`).join('');
+  $$('#tabs button').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+}
+function go(tab){ TAB=tab; $$('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); render(); }
+
+const ROUTES = {}; // preenchido abaixo
+async function render(){
+  const v=$('#view'); loading(v);
+  try{ await (ROUTES[TAB]||(()=>{v.innerHTML='<div class="empty">Em breve.</div>'}))(v); }
+  catch(err){ console.error(err); v.innerHTML=`<div class="empty">Erro ao carregar: ${esc(err.message||err)}</div>`; }
+}
+
+/* ================= CATÁLOGOS ================= */
+async function getProdutos(force){ if(!CACHE.produtos||force){ const {data}=await sb.from('aprotunas_produto').select('*').order('nome'); CACHE.produtos=data||[]; } return CACHE.produtos; }
+async function getProjetos(force){ if(!CACHE.projetos||force){ const {data}=await sb.from('aprotunas_projeto').select('*').order('nome'); CACHE.projetos=data||[]; } return CACHE.projetos; }
+async function getAssociados(force){ if(!CACHE.assoc||force){ const {data}=await sb.from('aprotunas_associado').select('id,nome,status').order('nome'); CACHE.assoc=data||[]; } return CACHE.assoc; }
+async function getContas(force){ if(!CACHE.contas||force){ const {data}=await sb.from('aprotunas_conta').select('*').order('nome'); CACHE.contas=data||[]; } return CACHE.contas; }
+function prodNome(id){ const p=(CACHE.produtos||[]).find(x=>x.id===id); return p?p.nome:'—'; }
+function prodUnid(id){ const p=(CACHE.produtos||[]).find(x=>x.id===id); return p?p.unidade:''; }
+function projNome(id){ const p=(CACHE.projetos||[]).find(x=>x.id===id); return p?p.nome:'—'; }
+function assocNome(id){ const a=(CACHE.assoc||[]).find(x=>x.id===id); return a?a.nome:'—'; }
+
+/* ================= MODAL / FORM ================= */
+function closeModal(){ const o=$('.overlay'); if(o) o.remove(); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+/* fields: [{key,label,type,options,required,step,placeholder,full,help}] type: text|number|date|select|textarea|checkbox */
+function openForm({title,fields,values={},onSave,wide,extraHTML}){
+  closeModal();
+  const body = fields.map(f=>{
+    const v = values[f.key] ?? f.default ?? '';
+    let ctrl='';
+    if(f.type==='select'){
+      const opts=(typeof f.options==='function'?f.options():f.options)||[];
+      ctrl=`<select class="inp" data-k="${f.key}">${f.required?'':'<option value="">—</option>'}${opts.map(o=>`<option value="${esc(o.value)}" ${String(o.value)===String(v)?'selected':''}>${esc(o.label)}</option>`).join('')}</select>`;
+    } else if(f.type==='textarea'){
+      ctrl=`<textarea class="inp" data-k="${f.key}" rows="3" placeholder="${esc(f.placeholder||'')}">${esc(v)}</textarea>`;
+    } else if(f.type==='checkbox'){
+      ctrl=`<label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" data-k="${f.key}" ${v?'checked':''}> ${esc(f.checkLabel||'Sim')}</label>`;
+    } else {
+      ctrl=`<input class="inp" data-k="${f.key}" type="${f.type||'text'}" ${f.step?`step="${f.step}"`:''} value="${esc(v)}" placeholder="${esc(f.placeholder||'')}">`;
+    }
+    return `<div class="field ${f.full?'full':''}"><label>${esc(f.label)}${f.required?' *':''}</label>${ctrl}${f.help?`<div style="font-size:11.5px;color:var(--muted);margin-top:4px">${esc(f.help)}</div>`:''}</div>`;
+  }).join('');
+  const o=document.createElement('div'); o.className='overlay';
+  o.innerHTML=`<div class="modal ${wide?'wide':''}">
+    <div class="modal-head"><h3>${esc(title)}</h3><button class="x">&times;</button></div>
+    <form id="mform"><div class="modal-body"><div class="form-grid">${body}</div>${extraHTML||''}</div>
+    <div class="modal-foot"><button type="button" class="btn ghost" data-close>Cancelar</button>
+    <button type="submit" class="btn" id="msave">Salvar</button></div></form></div>`;
+  document.body.appendChild(o);
+  o.addEventListener('click',e=>{ if(e.target===o||e.target.dataset.close!==undefined||e.target.classList.contains('x')) closeModal(); });
+  $('#mform',o).addEventListener('submit',async e=>{
+    e.preventDefault();
+    const out={};
+    $$('[data-k]',o).forEach(el=>{
+      let val = el.type==='checkbox'?el.checked:el.value;
+      if(el.tagName==='SELECT'||el.type!=='checkbox'){ if(val==='') val=null; }
+      out[el.dataset.k]=val;
+    });
+    const missing=fields.find(f=>f.required && (out[f.key]==null||out[f.key]===''));
+    if(missing){ toast('Preencha: '+missing.label,true); return; }
+    const btn=$('#msave',o); btn.disabled=true; btn.textContent='Salvando…';
+    try{ await onSave(out); closeModal(); }
+    catch(err){ toast(err.message||'Erro ao salvar',true); btn.disabled=false; btn.textContent='Salvar'; }
+  });
+}
+
+async function confirmDel(msg,fn){
+  if(!confirm(msg)) return;
+  try{ await fn(); toast('Excluído.'); }catch(err){ toast(err.message||'Erro',true); }
+}
+
+/* helper de tabela */
+function tbl(cols, rows, opts={}){
+  if(!rows.length) return `<div class="empty"><div class="ic">📭</div><div>${opts.empty||'Nenhum registro.'}</div></div>`;
+  return `<div style="overflow-x:auto"><table><thead><tr>${cols.map(c=>`<th class="${c.num?'num':''} ${c.act?'act':''}">${c.h||''}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map((r,i)=>`<tr class="${opts.onRow?'clk':''}" data-i="${i}">${cols.map(c=>`<td class="${c.num?'num':''} ${c.act?'act':''}">${c.f(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function wireRows(container,rows,onRow){
+  if(!onRow) return;
+  $$('tbody tr.clk',container).forEach(tr=>tr.addEventListener('click',e=>{
+    if(e.target.closest('button')) return;
+    onRow(rows[+tr.dataset.i]);
+  }));
+}
+
+/* ============================================================
+   MÓDULO: INÍCIO (dashboard gestor)
+============================================================ */
+ROUTES.inicio = async (v)=>{
+  const [assoc,contrib,estoque,saldos,proj,docs] = await Promise.all([
+    sb.from('aprotunas_associado').select('status'),
+    sb.from('aprotunas_contribuicao').select('valor,data_pagamento,vencimento'),
+    sb.from('aprotunas_v_estoque').select('nome,saldo'),
+    sb.from('aprotunas_v_saldo_conta').select('saldo_atual'),
+    sb.from('aprotunas_projeto').select('status'),
+    sb.from('aprotunas_documento').select('data_validade')
+  ]);
+  const ativos=(assoc.data||[]).filter(a=>a.status==='ativo').length;
+  const inativos=(assoc.data||[]).filter(a=>a.status==='inativo').length;
+  const hoje=today();
+  const inadimp = new Set((contrib.data||[]).filter(c=>!c.data_pagamento && c.vencimento && c.vencimento<hoje).map(c=>c.associado_id)).size;
+  const abertoVal=(contrib.data||[]).filter(c=>!c.data_pagamento).reduce((s,c)=>s+Number(c.valor||0),0);
+  const caixa=(saldos.data||[]).reduce((s,c)=>s+Number(c.saldo_atual||0),0);
+  const projAtivos=(proj.data||[]).filter(p=>p.status==='ativo').length;
+  const vencidos=(docs.data||[]).filter(d=>d.data_validade && d.data_validade<hoje).length;
+  const venc30=(docs.data||[]).filter(d=>{ if(!d.data_validade) return false; const dias=(new Date(d.data_validade)-new Date(hoje))/864e5; return dias>=0&&dias<=30; }).length;
+
+  v.innerHTML = `
+   <div class="page-head"><div><h2>Painel geral</h2><div style="font-size:13px;color:var(--muted)">Visão consolidada da associação</div></div></div>
+   <div class="cards">
+     <div class="stat"><div class="k">Associados ativos</div><div class="v">${ativos}</div><div class="foot">${inativos} inativo(s)</div></div>
+     <div class="stat"><div class="k">Inadimplentes</div><div class="v ${inadimp?'red':''}">${inadimp}</div><div class="foot">${BRL(abertoVal)} em aberto</div></div>
+     <div class="stat"><div class="k">Saldo em caixa</div><div class="v ${caixa<0?'red':'blue'}">${BRL(caixa)}</div><div class="foot">Todas as contas</div></div>
+     <div class="stat"><div class="k">Projetos ativos</div><div class="v">${projAtivos}</div><div class="foot">PNAE / PAA / outros</div></div>
+     <div class="stat"><div class="k">Docs. vencidos</div><div class="v ${vencidos?'red':''}">${vencidos}</div><div class="foot">${venc30} vence(m) em 30 dias</div></div>
+   </div>
+   <div class="panel"><div class="panel-head"><h3>Estoque atual por produto</h3></div>
+     <div class="panel-body flush">${tbl(
+       [{h:'Produto',f:r=>esc(r.nome)},{h:'Saldo',num:true,f:r=>`<b>${NUM(r.saldo)}</b>`}],
+       (estoque.data||[]).filter(e=>Number(e.saldo)!==0), {empty:'Sem movimentação de estoque ainda.'}
+     )}</div></div>`;
+};
+
+/* ============================================================
+   MÓDULO 1: ASSOCIADOS
+============================================================ */
+ROUTES.associados = async (v)=>{
+  const { data:rows } = await sb.from('aprotunas_associado').select('*').order('nome');
+  CACHE.assoc = rows.map(r=>({id:r.id,nome:r.nome,status:r.status}));
+  const render=(list)=>{
+    return tbl([
+      {h:'Nome',f:r=>`<b>${esc(r.nome)}</b>${r.numero_matricula?`<div style="font-size:11.5px;color:var(--muted)">Mat. ${esc(r.numero_matricula)}</div>`:''}`},
+      {h:'CPF',f:r=>esc(r.cpf||'—')},
+      {h:'Município',f:r=>esc(r.municipio||'—')},
+      {h:'Telefone',f:r=>esc(r.telefone||'—')},
+      {h:'Situação',f:r=>r.status==='ativo'?'<span class="tag ok">Ativo</span>':'<span class="tag grey">Inativo</span>'},
+    ], list, {onRow:r=>openAssociado(r.id), empty:'Nenhum associado cadastrado.'});
+  };
+  v.innerHTML=`
+    <div class="page-head"><h2>Associados</h2><div class="spacer"></div>
+      <button class="btn" id="novoAssoc">+ Novo associado</button></div>
+    <div class="filters"><div class="searchbox"><input class="inp" id="buscaAssoc" placeholder="Buscar por nome, CPF, município…"></div>
+      <select class="inp" id="fStatus"><option value="">Todos</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></div>
+    <div class="panel"><div class="panel-body flush" id="listaAssoc">${render(rows)}</div></div>`;
+  const apply=()=>{
+    const q=$('#buscaAssoc').value.toLowerCase(), st=$('#fStatus').value;
+    let list=rows.filter(r=>(!st||r.status===st) && (!q || [r.nome,r.cpf,r.municipio,r.numero_matricula].some(x=>(x||'').toLowerCase().includes(q))));
+    const c=$('#listaAssoc'); c.innerHTML=render(list); wireRows(c,list,r=>openAssociado(r.id));
+  };
+  $('#buscaAssoc').oninput=apply; $('#fStatus').onchange=apply;
+  wireRows($('#listaAssoc'),rows,r=>openAssociado(r.id));
+  $('#novoAssoc').onclick=()=>formAssociado();
+};
+
+function assocFields(){
+  return [
+    {key:'nome',label:'Nome completo',required:true,full:true},
+    {key:'numero_matricula',label:'Nº matrícula'},
+    {key:'data_matricula',label:'Data de matrícula',type:'date'},
+    {key:'cpf',label:'CPF'},{key:'rg',label:'RG'},
+    {key:'data_nascimento',label:'Nascimento',type:'date'},
+    {key:'telefone',label:'Telefone'},
+    {key:'email',label:'E-mail',type:'email'},
+    {key:'chave_pix',label:'Chave PIX'},
+    {key:'cep',label:'CEP'},
+    {key:'logradouro',label:'Logradouro',full:true},
+    {key:'numero',label:'Número'},{key:'bairro',label:'Bairro'},
+    {key:'municipio',label:'Município'},{key:'uf',label:'UF',default:'PR'},
+    {key:'status',label:'Situação',type:'select',options:[{value:'ativo',label:'Ativo'},{value:'inativo',label:'Inativo'}],default:'ativo',required:true},
+    {key:'observacoes',label:'Observações',type:'textarea',full:true},
+  ];
+}
+function formAssociado(row){
+  openForm({ title: row?'Editar associado':'Novo associado', wide:true, fields:assocFields(), values:row||{},
+    onSave: async(out)=>{
+      if(row){ const {error}=await sb.from('aprotunas_associado').update(out).eq('id',row.id); if(error) throw error; toast('Associado atualizado.'); openAssociado(row.id); }
+      else { const {data,error}=await sb.from('aprotunas_associado').insert(out).select().single(); if(error) throw error; toast('Associado cadastrado.'); openAssociado(data.id); }
+    }});
+}
+
+let ASSOC_SUB='dados';
+async function openAssociado(id){
+  TAB='associados'; $$('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='associados'));
+  const v=$('#view'); loading(v);
+  const { data:a } = await sb.from('aprotunas_associado').select('*').eq('id',id).single();
+  await Promise.all([getProdutos(),getProjetos()]);
+  const subs=[['dados','Dados'],['propriedades','Propriedades'],['documentos','Documentos'],['producao','Produção'],['contribuicoes','Contribuições']];
+  v.innerHTML=`
+    <div class="breadcrumb" id="bcAssoc">← Associados</div>
+    <div class="page-head"><div><h2>${esc(a.nome)}</h2>
+      <div style="font-size:13px;color:var(--muted)">${a.status==='ativo'?'<span class="tag ok">Ativo</span>':'<span class="tag grey">Inativo</span>'} ${a.municipio?'· '+esc(a.municipio)+'/'+esc(a.uf||''):''}</div></div>
+      <div class="spacer"></div>${isGestor()?`<button class="btn ghost sm" id="edAssoc">Editar</button> <button class="btn danger sm" id="delAssoc">Excluir</button>`:''}</div>
+    <div class="subtabs" id="assocSubs">${subs.map(([k,l])=>`<button data-s="${k}" class="${k===ASSOC_SUB?'active':''}">${l}</button>`).join('')}</div>
+    <div id="assocPane"></div>`;
+  $('#bcAssoc').onclick=()=>go('associados');
+  if(isGestor()){ $('#edAssoc').onclick=()=>formAssociado(a); $('#delAssoc').onclick=()=>confirmDel(`Excluir o associado "${a.nome}" e todos os seus documentos/produção? Esta ação não pode ser desfeita.`,async()=>{ const {error}=await sb.from('aprotunas_associado').delete().eq('id',id); if(error) throw error; go('associados'); }); }
+  $$('#assocSubs button').forEach(b=>b.onclick=()=>{ ASSOC_SUB=b.dataset.s; $$('#assocSubs button').forEach(x=>x.classList.toggle('active',x===b)); paintAssocSub(a); });
+  paintAssocSub(a);
+}
+
+async function paintAssocSub(a){
+  const p=$('#assocPane'); loading(p);
+  if(ASSOC_SUB==='dados'){
+    p.innerHTML=`<div class="panel"><div class="panel-body"><dl class="dl">
+      <dt>Nome</dt><dd>${esc(a.nome)}</dd>
+      <dt>Nº matrícula</dt><dd>${esc(a.numero_matricula||'—')}</dd>
+      <dt>Data de matrícula</dt><dd>${dBR(a.data_matricula)}</dd>
+      <dt>CPF</dt><dd>${esc(a.cpf||'—')}</dd><dt>RG</dt><dd>${esc(a.rg||'—')}</dd>
+      <dt>Nascimento</dt><dd>${dBR(a.data_nascimento)}</dd>
+      <dt>Telefone</dt><dd>${esc(a.telefone||'—')}</dd><dt>E-mail</dt><dd>${esc(a.email||'—')}</dd>
+      <dt>Chave PIX</dt><dd>${esc(a.chave_pix||'—')}</dd>
+      <dt>Endereço</dt><dd>${esc([a.logradouro,a.numero,a.bairro].filter(Boolean).join(', ')||'—')}${a.municipio?` — ${esc(a.municipio)}/${esc(a.uf||'')}`:''} ${a.cep?'· CEP '+esc(a.cep):''}</dd>
+      <dt>Observações</dt><dd>${esc(a.observacoes||'—')}</dd>
+    </dl></div></div>`;
+    return;
+  }
+  if(ASSOC_SUB==='propriedades'){
+    const {data:rows}=await sb.from('aprotunas_propriedade').select('*').eq('associado_id',a.id).order('created_at');
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Propriedades</h3><div class="spacer"></div><button class="btn sm" id="addProp">+ Adicionar</button></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Nome/Matrícula',f:r=>`<b>${esc(r.nome||'—')}</b>${r.matricula_imovel?`<div style="font-size:11.5px;color:var(--muted)">Mat. ${esc(r.matricula_imovel)}</div>`:''}`},
+        {h:'Posse',f:r=>esc(r.tipo_posse||'—')},
+        {h:'Área (ha)',num:true,f:r=>r.area_ha?NUM(r.area_ha):'—'},
+        {h:'Município',f:r=>esc(r.municipio||'—')},
+        {act:true,f:r=>`<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
+      ],rows,{empty:'Nenhuma propriedade.'})}</div></div>`;
+    const fields=[{key:'nome',label:'Nome/Identificação',full:true},{key:'matricula_imovel',label:'Matrícula do imóvel'},
+      {key:'tipo_posse',label:'Posse',type:'select',options:[{value:'propria',label:'Própria'},{value:'arrendamento',label:'Arrendamento'},{value:'outro',label:'Outro'}]},
+      {key:'area_ha',label:'Área (ha)',type:'number',step:'0.01'},{key:'municipio',label:'Município'},{key:'uf',label:'UF',default:'PR'},
+      {key:'observacoes',label:'Observações',type:'textarea',full:true}];
+    $('#addProp').onclick=()=>openForm({title:'Nova propriedade',fields,onSave:async o=>{o.associado_id=a.id;const{error}=await sb.from('aprotunas_propriedade').insert(o);if(error)throw error;toast('Salvo.');paintAssocSub(a);}});
+    $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar propriedade',fields,values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_propriedade').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintAssocSub(a);}});});
+    $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir esta propriedade?',async()=>{await sb.from('aprotunas_propriedade').delete().eq('id',b.dataset.del);paintAssocSub(a);}));
+    return;
+  }
+  if(ASSOC_SUB==='documentos'){
+    const {data:rows}=await sb.from('aprotunas_documento').select('*').eq('associado_id',a.id).order('categoria');
+    const hoje=today();
+    const stTag=r=>{ if(!r.data_validade) return '<span class="tag grey">Sem validade</span>'; if(r.data_validade<hoje) return '<span class="tag red">Vencido</span>'; const dias=(new Date(r.data_validade)-new Date(hoje))/864e5; return dias<=30?'<span class="tag amber">Vence em breve</span>':'<span class="tag ok">Vigente</span>'; };
+    const catLbl={pessoal:'Pessoal',propriedade:'Propriedade',certificado:'Certificado'};
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Documentos</h3><div class="spacer"></div><button class="btn sm" id="addDoc">+ Adicionar</button></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Documento',f:r=>`<b>${esc(r.tipo)}</b>${r.descricao?`<div style="font-size:11.5px;color:var(--muted)">${esc(r.descricao)}</div>`:''}`},
+        {h:'Categoria',f:r=>`<span class="tag blue">${catLbl[r.categoria]||r.categoria}</span>`},
+        {h:'Emissão',f:r=>dBR(r.data_emissao)},
+        {h:'Validade',f:r=>dBR(r.data_validade)},
+        {h:'Situação',f:r=>stTag(r)},
+        {h:'Arquivo',f:r=>r.arquivo_path?`<button class="linkbtn" data-file="${r.id}">Baixar</button>`:'—'},
+        {act:true,f:r=>`<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
+      ],rows,{empty:'Nenhum documento anexado.'})}</div></div>`;
+    const tipoOpts=['RG','CPF','Comprovante de endereço','Ficha de matrícula','Matrícula do imóvel','Contrato de arrendamento','CCIR','ITR','CADPRO','CAF','Certificado orgânico','BPA','Produção integrada','Outro'].map(t=>({value:t,label:t}));
+    const openDocForm=(r)=>openForm({title:r?'Editar documento':'Novo documento',wide:true,
+      fields:[
+        {key:'categoria',label:'Categoria',type:'select',required:true,options:[{value:'pessoal',label:'Pessoal'},{value:'propriedade',label:'Propriedade'},{value:'certificado',label:'Certificado'}]},
+        {key:'tipo',label:'Tipo',type:'select',required:true,options:tipoOpts},
+        {key:'numero',label:'Número/Registro'},
+        {key:'data_emissao',label:'Emissão',type:'date'},
+        {key:'data_validade',label:'Validade',type:'date',help:'Deixe em branco se não tem validade'},
+        {key:'descricao',label:'Descrição',type:'textarea',full:true},
+      ],values:r||{},
+      extraHTML:`<div class="field full"><label>Arquivo (PDF/imagem)</label><input class="inp" type="file" id="docFile" accept=".pdf,image/*"><div style="font-size:11.5px;color:var(--muted);margin-top:4px">${r&&r.arquivo_path?'Já existe um arquivo — envie outro para substituir.':'Opcional.'}</div></div>`,
+      onSave:async o=>{
+        o.associado_id=a.id;
+        const file=$('#docFile')?.files[0];
+        if(r){ const {error}=await sb.from('aprotunas_documento').update(o).eq('id',r.id); if(error) throw error; if(file) await uploadDoc(a.id,r.id,file); }
+        else { const {data:ins,error}=await sb.from('aprotunas_documento').insert(o).select().single(); if(error) throw error; if(file) await uploadDoc(a.id,ins.id,file); }
+        toast('Documento salvo.'); paintAssocSub(a);
+      }});
+    $('#addDoc').onclick=()=>openDocForm();
+    $$('[data-ed]',p).forEach(b=>b.onclick=()=>openDocForm(rows.find(x=>x.id===b.dataset.ed)));
+    $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir este documento?',async()=>{const r=rows.find(x=>x.id===b.dataset.del);if(r.arquivo_path)await sb.storage.from('aprotunas-docs').remove([r.arquivo_path]);await sb.from('aprotunas_documento').delete().eq('id',r.id);paintAssocSub(a);}));
+    $$('[data-file]',p).forEach(b=>b.onclick=async()=>{const r=rows.find(x=>x.id===b.dataset.file);const {data,error}=await sb.storage.from('aprotunas-docs').createSignedUrl(r.arquivo_path,120);if(error){toast('Erro ao abrir arquivo',true);return;}window.open(data.signedUrl,'_blank');});
+    return;
+  }
+  if(ASSOC_SUB==='producao'){
+    const {data:rows}=await sb.from('aprotunas_producao_associado').select('*').eq('associado_id',a.id).order('ano',{ascending:false});
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Produção declarada</h3><div class="spacer"></div><button class="btn sm" id="addProd">+ Adicionar</button></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Produto',f:r=>esc(prodNome(r.produto_id))},
+        {h:'Ano',f:r=>r.ano},
+        {h:'Qtd/ano',num:true,f:r=>`${NUM(r.quantidade_estimada)} ${esc(r.unidade||'')}`},
+        {h:'Obs.',f:r=>esc(r.observacao||'—')},
+        {act:true,f:r=>`<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
+      ],rows,{empty:'Nenhuma produção declarada.'})}</div></div>`;
+    const fields=()=>[{key:'produto_id',label:'Produto',type:'select',required:true,options:(CACHE.produtos||[]).map(x=>({value:x.id,label:x.nome}))},
+      {key:'ano',label:'Ano',type:'number',default:new Date().getFullYear(),required:true},
+      {key:'quantidade_estimada',label:'Quantidade estimada',type:'number',step:'0.001',required:true},
+      {key:'unidade',label:'Unidade',type:'select',options:['kg','un','dz','L','mç','t'].map(u=>({value:u,label:u})),default:'kg'},
+      {key:'observacao',label:'Observação',type:'textarea',full:true}];
+    $('#addProd').onclick=()=>openForm({title:'Nova produção',fields:fields(),onSave:async o=>{o.associado_id=a.id;const{error}=await sb.from('aprotunas_producao_associado').insert(o);if(error)throw error;toast('Salvo.');paintAssocSub(a);}});
+    $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar produção',fields:fields(),values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_producao_associado').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintAssocSub(a);}});});
+    $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir?',async()=>{await sb.from('aprotunas_producao_associado').delete().eq('id',b.dataset.del);paintAssocSub(a);}));
+    return;
+  }
+  if(ASSOC_SUB==='contribuicoes'){
+    const {data:rows}=await sb.from('aprotunas_contribuicao').select('*').eq('associado_id',a.id).order('vencimento',{ascending:false});
+    const hoje=today();
+    const stTag=r=>r.data_pagamento?'<span class="tag ok">Pago</span>':(r.vencimento&&r.vencimento<hoje?'<span class="tag red">Atrasado</span>':'<span class="tag amber">Em aberto</span>');
+    const total=rows.reduce((s,r)=>s+Number(r.valor||0),0), aberto=rows.filter(r=>!r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Contribuições</h3><div class="spacer"></div>
+      <span style="font-size:12.5px;color:var(--muted)">Em aberto: <b style="color:var(--red)">${BRL(aberto)}</b></span>
+      ${isGestor()?'<button class="btn sm" id="addCon">+ Lançar</button>':''}</div>
+      <div class="panel-body flush">${tbl([
+        {h:'Competência',f:r=>r.competencia?dBR(r.competencia).slice(3):'—'},
+        {h:'Tipo',f:r=>esc(r.tipo)},
+        {h:'Valor',num:true,f:r=>BRL(r.valor)},
+        {h:'Vencimento',f:r=>dBR(r.vencimento)},
+        {h:'Pagamento',f:r=>dBR(r.data_pagamento)},
+        {h:'Situação',f:r=>stTag(r)},
+        ...(isGestor()?[{act:true,f:r=>`${r.data_pagamento?`<button class="linkbtn" data-reab="${r.id}">Reabrir</button>`:`<button class="linkbtn" data-pag="${r.id}">Dar baixa</button>`}<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}]:[])
+      ],rows,{empty:'Nenhuma contribuição.'})}</div></div>`;
+    if(isGestor()){
+      const fields=[{key:'tipo',label:'Tipo',type:'select',required:true,options:[{value:'mensalidade',label:'Mensalidade'},{value:'anuidade',label:'Anuidade'},{value:'outro',label:'Outro'}],default:'mensalidade'},
+        {key:'competencia',label:'Competência (mês)',type:'date',help:'Use o dia 01 do mês de referência'},
+        {key:'valor',label:'Valor (R$)',type:'number',step:'0.01',required:true},
+        {key:'vencimento',label:'Vencimento',type:'date'},
+        {key:'data_pagamento',label:'Data de pagamento',type:'date',help:'Deixe em branco se ainda não pago'},
+        {key:'forma_pagamento',label:'Forma de pagamento'},
+        {key:'descricao',label:'Descrição',type:'textarea',full:true}];
+      $('#addCon').onclick=()=>openForm({title:'Lançar contribuição',fields,onSave:async o=>{o.associado_id=a.id;const{error}=await sb.from('aprotunas_contribuicao').insert(o);if(error)throw error;toast('Lançado.');paintAssocSub(a);}});
+      $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar contribuição',fields,values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_contribuicao').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintAssocSub(a);}});});
+      $$('[data-pag]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_contribuicao').update({data_pagamento:today()}).eq('id',b.dataset.pag);toast('Baixa registrada.');paintAssocSub(a);});
+      $$('[data-reab]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_contribuicao').update({data_pagamento:null}).eq('id',b.dataset.reab);paintAssocSub(a);});
+      $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir contribuição?',async()=>{await sb.from('aprotunas_contribuicao').delete().eq('id',b.dataset.del);paintAssocSub(a);}));
+    }
+    return;
+  }
+}
+async function uploadDoc(assocId,docId,file){
+  const ext=file.name.split('.').pop();
+  const path=`${assocId}/${docId}.${ext}`;
+  const {error}=await sb.storage.from('aprotunas-docs').upload(path,file,{upsert:true});
+  if(error){ toast('Falha no upload: '+error.message,true); return; }
+  await sb.from('aprotunas_documento').update({arquivo_path:path}).eq('id',docId);
+}
+
+/* ============================================================
+   MÓDULO 2: RECEBIMENTO / DISTRIBUIÇÃO / ESTOQUE
+============================================================ */
+let ESTOQUE_SUB='recebimento';
+ROUTES.estoque = async (v)=>{
+  await Promise.all([getProdutos(),getProjetos(),getAssociados()]);
+  v.innerHTML=`<div class="page-head"><h2>Recebimento & Estoque</h2></div>
+    <div class="subtabs" id="estSubs">
+      <button data-s="recebimento" class="${ESTOQUE_SUB==='recebimento'?'active':''}">Recebimentos</button>
+      <button data-s="distribuicao" class="${ESTOQUE_SUB==='distribuicao'?'active':''}">Distribuições</button>
+      <button data-s="saldo" class="${ESTOQUE_SUB==='saldo'?'active':''}">Estoque atual</button>
+    </div><div id="estPane"></div>`;
+  $$('#estSubs button').forEach(b=>b.onclick=()=>{ESTOQUE_SUB=b.dataset.s;$$('#estSubs button').forEach(x=>x.classList.toggle('active',x===b));paintEstoque();});
+  paintEstoque();
+};
+async function paintEstoque(){
+  const p=$('#estPane'); loading(p);
+  if(ESTOQUE_SUB==='recebimento'){
+    const {data:rows}=await sb.from('aprotunas_recebimento').select('*').order('data',{ascending:false}).limit(300);
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Romaneios de recebimento</h3><div class="spacer"></div><button class="btn sm" id="addRec">+ Novo recebimento</button></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Código',f:r=>`<b>${esc(r.codigo||'—')}</b>`},
+        {h:'Data',f:r=>dBR(r.data)},
+        {h:'Produtor',f:r=>esc(assocNome(r.associado_id))},
+        {h:'Produto',f:r=>esc(prodNome(r.produto_id))},
+        {h:'Qtd',num:true,f:r=>`${NUM(r.quantidade)} ${esc(r.unidade||'')}`},
+        {h:'Valor',num:true,f:r=>BRL(r.valor_total)},
+        {h:'Projeto',f:r=>r.projeto_id?`<span class="tag blue">${esc(projNome(r.projeto_id))}</span>`:'—'},
+        {act:true,f:r=>`<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
+      ],rows,{empty:'Nenhum recebimento registrado.'})}</div></div>`;
+    const fields=()=>[
+      {key:'data',label:'Data',type:'date',default:today(),required:true},
+      {key:'associado_id',label:'Produtor',type:'select',required:true,options:(CACHE.assoc||[]).map(x=>({value:x.id,label:x.nome}))},
+      {key:'produto_id',label:'Produto',type:'select',required:true,options:(CACHE.produtos||[]).map(x=>({value:x.id,label:x.nome}))},
+      {key:'quantidade',label:'Quantidade',type:'number',step:'0.001',required:true},
+      {key:'unidade',label:'Unidade',type:'select',options:['kg','un','dz','L','mç','t'].map(u=>({value:u,label:u})),default:'kg'},
+      {key:'peso',label:'Peso (kg)',type:'number',step:'0.001'},
+      {key:'valor_unitario',label:'Valor unitário (R$)',type:'number',step:'0.0001'},
+      {key:'projeto_id',label:'Projeto',type:'select',options:(CACHE.projetos||[]).map(x=>({value:x.id,label:x.nome}))},
+      {key:'observacao',label:'Observação',type:'textarea',full:true},
+    ];
+    $('#addRec').onclick=()=>openForm({title:'Novo recebimento',wide:true,fields:fields(),onSave:async o=>{const{error}=await sb.from('aprotunas_recebimento').insert(o);if(error)throw error;toast('Recebimento registrado.');paintEstoque();}});
+    $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar recebimento',wide:true,fields:fields(),values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_recebimento').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintEstoque();}});});
+    $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir recebimento? Isso afeta o estoque.',async()=>{await sb.from('aprotunas_recebimento').delete().eq('id',b.dataset.del);paintEstoque();}));
+    return;
+  }
+  if(ESTOQUE_SUB==='distribuicao'){
+    const {data:rows}=await sb.from('aprotunas_distribuicao').select('*').order('data',{ascending:false}).limit(300);
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Romaneios de distribuição</h3><div class="spacer"></div><button class="btn sm" id="addDist">+ Nova distribuição</button></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Código',f:r=>`<b>${esc(r.codigo||'—')}</b>`},
+        {h:'Data',f:r=>dBR(r.data)},
+        {h:'Produto',f:r=>esc(prodNome(r.produto_id))},
+        {h:'Qtd',num:true,f:r=>`${NUM(r.quantidade)} ${esc(r.unidade||'')}`},
+        {h:'Valor',num:true,f:r=>BRL(r.valor_total)},
+        {h:'Projeto',f:r=>r.projeto_id?`<span class="tag blue">${esc(projNome(r.projeto_id))}</span>`:'—'},
+        {h:'Local',f:r=>esc(r.local_entrega||'—')},
+        {act:true,f:r=>`<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
+      ],rows,{empty:'Nenhuma distribuição registrada.'})}</div></div>`;
+    const fields=()=>[
+      {key:'data',label:'Data',type:'date',default:today(),required:true},
+      {key:'produto_id',label:'Produto',type:'select',required:true,options:(CACHE.produtos||[]).map(x=>({value:x.id,label:x.nome}))},
+      {key:'quantidade',label:'Quantidade',type:'number',step:'0.001',required:true},
+      {key:'unidade',label:'Unidade',type:'select',options:['kg','un','dz','L','mç','t'].map(u=>({value:u,label:u})),default:'kg'},
+      {key:'valor_unitario',label:'Valor unitário (R$)',type:'number',step:'0.0001'},
+      {key:'projeto_id',label:'Projeto',type:'select',options:(CACHE.projetos||[]).map(x=>({value:x.id,label:x.nome}))},
+      {key:'local_entrega',label:'Local de entrega (escola/instituição)',full:true},
+      {key:'observacao',label:'Observação',type:'textarea',full:true},
+    ];
+    $('#addDist').onclick=()=>openForm({title:'Nova distribuição',wide:true,fields:fields(),onSave:async o=>{const{error}=await sb.from('aprotunas_distribuicao').insert(o);if(error)throw error;toast('Distribuição registrada.');paintEstoque();}});
+    $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar distribuição',wide:true,fields:fields(),values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_distribuicao').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintEstoque();}});});
+    $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir distribuição? Isso afeta o estoque.',async()=>{await sb.from('aprotunas_distribuicao').delete().eq('id',b.dataset.del);paintEstoque();}));
+    return;
+  }
+  if(ESTOQUE_SUB==='saldo'){
+    const {data:rows}=await sb.from('aprotunas_v_estoque').select('*').order('nome');
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Estoque atual</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">Inicial + entradas − saídas</span></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Produto',f:r=>`<b>${esc(r.nome)}</b> <span style="color:var(--muted);font-size:11.5px">(${esc(r.unidade)})</span>`},
+        {h:'Inicial',num:true,f:r=>NUM(r.estoque_inicial)},
+        {h:'Entradas',num:true,f:r=>NUM(r.entradas)},
+        {h:'Saídas',num:true,f:r=>NUM(r.saidas)},
+        {h:'Saldo',num:true,f:r=>`<b style="color:${Number(r.saldo)<0?'var(--red)':'var(--green-d)'}">${NUM(r.saldo)}</b>`},
+      ],rows,{empty:'Cadastre produtos e romaneios.'})}</div></div>`;
+    return;
+  }
+}
+
+/* ============================================================
+   MÓDULO 3: FINANCEIRO
+============================================================ */
+let FIN_SUB='lancamentos', FIN_FILTRO='';
+ROUTES.financeiro = async (v)=>{
+  await Promise.all([getProjetos(),getAssociados(),getContas()]);
+  const {data:saldos}=await sb.from('aprotunas_v_saldo_conta').select('*');
+  const caixa=(saldos||[]).reduce((s,c)=>s+Number(c.saldo_atual||0),0);
+  v.innerHTML=`<div class="page-head"><h2>Financeiro</h2></div>
+    <div class="cards">
+      <div class="stat"><div class="k">Saldo atual (todas as contas)</div><div class="v ${caixa<0?'red':'blue'}">${BRL(caixa)}</div></div>
+      ${(saldos||[]).map(c=>`<div class="stat"><div class="k">${esc(c.nome)}</div><div class="v" style="font-size:20px">${BRL(c.saldo_atual)}</div><div class="foot">Inicial ${BRL(c.saldo_inicial)}</div></div>`).join('')}
+    </div>
+    <div class="subtabs" id="finSubs">
+      <button data-s="lancamentos" class="${FIN_SUB==='lancamentos'?'active':''}">Lançamentos</button>
+      <button data-s="pagar" class="${FIN_SUB==='pagar'?'active':''}">Contas a pagar</button>
+      <button data-s="receber" class="${FIN_SUB==='receber'?'active':''}">Contas a receber</button>
+      <button data-s="contas" class="${FIN_SUB==='contas'?'active':''}">Contas/Caixa</button>
+    </div><div id="finPane"></div>`;
+  $$('#finSubs button').forEach(b=>b.onclick=()=>{FIN_SUB=b.dataset.s;$$('#finSubs button').forEach(x=>x.classList.toggle('active',x===b));paintFin();});
+  paintFin();
+};
+function finFields(){return [
+  {key:'tipo',label:'Tipo',type:'select',required:true,options:[{value:'receita',label:'Receita'},{value:'despesa',label:'Despesa'}]},
+  {key:'origem',label:'Origem',type:'select',options:[{value:'contribuicao',label:'Contribuição'},{value:'pagamento_produtor',label:'Pagamento a produtor'},{value:'recebimento_projeto',label:'Recebimento de projeto'},{value:'despesa_fixa',label:'Despesa fixa'},{value:'despesa_variavel',label:'Despesa variável'},{value:'outro',label:'Outro'}],default:'outro'},
+  {key:'descricao',label:'Descrição',required:true,full:true},
+  {key:'valor',label:'Valor (R$)',type:'number',step:'0.01',required:true},
+  {key:'categoria',label:'Categoria'},
+  {key:'conta_id',label:'Conta',type:'select',options:(CACHE.contas||[]).map(x=>({value:x.id,label:x.nome}))},
+  {key:'data_vencimento',label:'Vencimento',type:'date'},
+  {key:'data_pagamento',label:'Pagamento/Recebimento',type:'date',help:'Em branco = em aberto'},
+  {key:'projeto_id',label:'Projeto',type:'select',options:(CACHE.projetos||[]).map(x=>({value:x.id,label:x.nome}))},
+  {key:'associado_id',label:'Associado (opcional)',type:'select',options:(CACHE.assoc||[]).map(x=>({value:x.id,label:x.nome}))},
+  {key:'observacao',label:'Observação',type:'textarea',full:true},
+];}
+async function paintFin(){
+  const p=$('#finPane'); loading(p);
+  if(FIN_SUB==='contas'){
+    const {data:rows}=await sb.from('aprotunas_v_saldo_conta').select('*').order('nome');
+    const {data:todas}=await sb.from('aprotunas_conta').select('*').order('nome');
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Contas e caixa</h3><div class="spacer"></div><button class="btn sm" id="addConta">+ Nova conta</button></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Conta',f:r=>`<b>${esc(r.nome)}</b>`},{h:'Tipo',f:r=>esc(r.tipo)},
+        {h:'Saldo inicial',num:true,f:r=>BRL(r.saldo_inicial)},
+        {h:'Receitas',num:true,f:r=>BRL(r.receitas)},{h:'Despesas',num:true,f:r=>BRL(r.despesas)},
+        {h:'Saldo atual',num:true,f:r=>`<b>${BRL(r.saldo_atual)}</b>`},
+      ],rows,{empty:'Nenhuma conta.'})}</div></div>`;
+    const fields=[{key:'nome',label:'Nome',required:true,full:true},{key:'tipo',label:'Tipo',type:'select',options:[{value:'banco',label:'Banco'},{value:'caixa',label:'Caixa'}],default:'banco'},{key:'saldo_inicial',label:'Saldo inicial (R$)',type:'number',step:'0.01',default:0}];
+    $('#addConta').onclick=()=>openForm({title:'Nova conta',fields,onSave:async o=>{const{error}=await sb.from('aprotunas_conta').insert(o);if(error)throw error;CACHE.contas=null;toast('Conta criada.');paintFin();}});
+    return;
+  }
+  // lançamentos / pagar / receber
+  let query=sb.from('aprotunas_lancamento').select('*').order('data_vencimento',{ascending:false,nullsFirst:false}).limit(400);
+  if(FIN_SUB==='pagar') query=query.eq('tipo','despesa').is('data_pagamento',null);
+  if(FIN_SUB==='receber') query=query.eq('tipo','receita').is('data_pagamento',null);
+  const {data:rows}=await query;
+  const total=rows.reduce((s,r)=>s+(r.tipo==='receita'?1:-1)*Number(r.valor||0),0);
+  const abertoLbl=FIN_SUB==='pagar'?'Total a pagar':FIN_SUB==='receber'?'Total a receber':'Resultado (receitas − despesas)';
+  const abertoVal=FIN_SUB==='lancamentos'?total:rows.reduce((s,r)=>s+Number(r.valor||0),0);
+  const stTag=r=>r.data_pagamento?'<span class="tag ok">Liquidado</span>':(r.data_vencimento&&r.data_vencimento<today()?'<span class="tag red">Vencido</span>':'<span class="tag amber">Em aberto</span>');
+  p.innerHTML=`<div class="panel"><div class="panel-head"><h3>${FIN_SUB==='pagar'?'Contas a pagar':FIN_SUB==='receber'?'Contas a receber':'Lançamentos'}</h3>
+      <div class="spacer"></div><span style="font-size:12.5px;color:var(--muted)">${abertoLbl}: <b style="color:${abertoVal<0?'var(--red)':'var(--green-d)'}">${BRL(abertoVal)}</b></span>
+      <button class="btn sm" id="addLanc">+ Lançar</button></div>
+    <div class="panel-body flush">${tbl([
+      {h:'Descrição',f:r=>`<b>${esc(r.descricao)}</b>${r.categoria?`<div style="font-size:11.5px;color:var(--muted)">${esc(r.categoria)}</div>`:''}`},
+      {h:'Tipo',f:r=>r.tipo==='receita'?'<span class="tag ok">Receita</span>':'<span class="tag red">Despesa</span>'},
+      {h:'Valor',num:true,f:r=>BRL(r.valor)},
+      {h:'Vencimento',f:r=>dBR(r.data_vencimento)},
+      {h:'Projeto',f:r=>r.projeto_id?esc(projNome(r.projeto_id)):'—'},
+      {h:'Situação',f:r=>stTag(r)},
+      {act:true,f:r=>`${r.data_pagamento?`<button class="linkbtn" data-reab="${r.id}">Reabrir</button>`:`<button class="linkbtn" data-liq="${r.id}">Liquidar</button>`}<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
+    ],rows,{empty:'Nenhum lançamento.'})}</div></div>`;
+  const preset=FIN_SUB==='pagar'?{tipo:'despesa'}:FIN_SUB==='receber'?{tipo:'receita'}:{};
+  $('#addLanc').onclick=()=>openForm({title:'Novo lançamento',wide:true,fields:finFields(),values:preset,onSave:async o=>{const{error}=await sb.from('aprotunas_lancamento').insert(o);if(error)throw error;toast('Lançado.');paintFin();}});
+  $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar lançamento',wide:true,fields:finFields(),values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_lancamento').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintFin();}});});
+  $$('[data-liq]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_lancamento').update({data_pagamento:today()}).eq('id',b.dataset.liq);toast('Liquidado.');paintFin();});
+  $$('[data-reab]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_lancamento').update({data_pagamento:null}).eq('id',b.dataset.reab);paintFin();});
+  $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir lançamento?',async()=>{await sb.from('aprotunas_lancamento').delete().eq('id',b.dataset.del);paintFin();}));
+}
+
+/* ============================================================
+   MÓDULO 4: PROJETOS
+============================================================ */
+ROUTES.projetos = async (v)=>{
+  await Promise.all([getProdutos()]);
+  const {data:exec}=await sb.from('aprotunas_v_projeto_exec').select('*').order('nome');
+  v.innerHTML=`<div class="page-head"><h2>Projetos</h2><div class="spacer"></div><button class="btn" id="novoProj">+ Novo projeto</button></div>
+    <div class="panel"><div class="panel-body flush">${tbl([
+      {h:'Projeto',f:r=>`<b>${esc(r.nome)}</b>`},
+      {h:'Tipo',f:r=>`<span class="tag blue">${esc(r.tipo)}</span>`},
+      {h:'Valor global',num:true,f:r=>BRL(r.valor_global)},
+      {h:'Recebido',num:true,f:r=>BRL(r.valor_recebido)},
+      {h:'Exec. física',num:true,f:r=>`${NUM(r.pct_fisico)}%`},
+      {h:'Exec. financ.',num:true,f:r=>`${NUM(r.pct_financeiro)}%`},
+      {h:'Situação',f:r=>r.status==='ativo'?'<span class="tag ok">Ativo</span>':`<span class="tag grey">${esc(r.status)}</span>`},
+    ],exec,{onRow:r=>openProjeto(r.projeto_id),empty:'Nenhum projeto cadastrado.'})}</div></div>`;
+  wireRows($('.panel',v),exec,r=>openProjeto(r.projeto_id));
+  $('#novoProj').onclick=()=>formProjeto();
+};
+function projFields(){return [
+  {key:'nome',label:'Nome do projeto',required:true,full:true},
+  {key:'tipo',label:'Tipo',type:'select',required:true,options:[{value:'PNAE',label:'PNAE'},{value:'PAA',label:'PAA'},{value:'outro',label:'Outro'}],default:'PNAE'},
+  {key:'contratante',label:'Contratante (prefeitura/entidade)'},
+  {key:'valor_global',label:'Valor global (R$)',type:'number',step:'0.01',default:0},
+  {key:'data_inicio',label:'Início',type:'date'},{key:'data_fim',label:'Fim',type:'date'},
+  {key:'status',label:'Situação',type:'select',options:[{value:'ativo',label:'Ativo'},{value:'encerrado',label:'Encerrado'},{value:'suspenso',label:'Suspenso'}],default:'ativo'},
+  {key:'descricao',label:'Descrição',type:'textarea',full:true},
+];}
+function formProjeto(row){
+  openForm({title:row?'Editar projeto':'Novo projeto',wide:true,fields:projFields(),values:row||{},onSave:async o=>{
+    if(row){const{error}=await sb.from('aprotunas_projeto').update(o).eq('id',row.id);if(error)throw error;CACHE.projetos=null;toast('Salvo.');openProjeto(row.id);}
+    else{const{data,error}=await sb.from('aprotunas_projeto').insert(o).select().single();if(error)throw error;CACHE.projetos=null;toast('Projeto criado.');openProjeto(data.id);}
+  }});
+}
+async function openProjeto(id){
+  TAB='projetos'; $$('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='projetos'));
+  const v=$('#view'); loading(v);
+  await getProdutos();
+  const [{data:pr},{data:ex},{data:itens}]=await Promise.all([
+    sb.from('aprotunas_projeto').select('*').eq('id',id).single(),
+    sb.from('aprotunas_v_projeto_exec').select('*').eq('projeto_id',id).maybeSingle(),
+    sb.from('aprotunas_projeto_item').select('*').eq('projeto_id',id)
+  ]);
+  const e=ex||{};
+  v.innerHTML=`
+    <div class="breadcrumb" id="bcProj">← Projetos</div>
+    <div class="page-head"><div><h2>${esc(pr.nome)}</h2><div style="font-size:13px;color:var(--muted)"><span class="tag blue">${esc(pr.tipo)}</span> ${pr.contratante?'· '+esc(pr.contratante):''}</div></div>
+      <div class="spacer"></div><button class="btn ghost sm" id="edProj">Editar</button> <button class="btn danger sm" id="delProj">Excluir</button></div>
+    <div class="cards">
+      <div class="stat"><div class="k">Valor global</div><div class="v" style="font-size:20px">${BRL(pr.valor_global)}</div></div>
+      <div class="stat"><div class="k">Recebido</div><div class="v blue" style="font-size:20px">${BRL(e.valor_recebido)}</div><div class="foot">Pago: ${BRL(e.valor_pago)}</div></div>
+      <div class="stat"><div class="k">Execução física</div><div class="v" style="font-size:20px">${NUM(e.pct_fisico||0)}%</div><div class="foot">${NUM(e.qtd_entregue||0)} de ${NUM(e.qtd_contratada||0)}</div></div>
+      <div class="stat"><div class="k">Execução financeira</div><div class="v" style="font-size:20px">${NUM(e.pct_financeiro||0)}%</div></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Itens contratados</h3><div class="spacer"></div><button class="btn sm" id="addItem">+ Item</button></div>
+      <div class="panel-body flush" id="itensPane"></div></div>`;
+  $('#bcProj').onclick=()=>go('projetos');
+  $('#edProj').onclick=()=>formProjeto(pr);
+  $('#delProj').onclick=()=>confirmDel(`Excluir o projeto "${pr.nome}"?`,async()=>{const{error}=await sb.from('aprotunas_projeto').delete().eq('id',id);if(error)throw error;CACHE.projetos=null;go('projetos');});
+  const paintItens=async()=>{
+    const {data:its}=await sb.from('aprotunas_projeto_item').select('*').eq('projeto_id',id);
+    const {data:entregas}=await sb.from('aprotunas_distribuicao').select('produto_id,quantidade').eq('projeto_id',id);
+    const entMap={}; (entregas||[]).forEach(x=>entMap[x.produto_id]=(entMap[x.produto_id]||0)+Number(x.quantidade));
+    $('#itensPane').innerHTML=tbl([
+      {h:'Produto',f:r=>esc(prodNome(r.produto_id))},
+      {h:'Contratado',num:true,f:r=>`${NUM(r.quantidade_contratada)} ${esc(r.unidade||'')}`},
+      {h:'Entregue',num:true,f:r=>NUM(entMap[r.produto_id]||0)},
+      {h:'Saldo',num:true,f:r=>{const s=Number(r.quantidade_contratada)-(entMap[r.produto_id]||0);return `<b style="color:${s<0?'var(--red)':'inherit'}">${NUM(s)}</b>`;}},
+      {h:'Vlr unit.',num:true,f:r=>BRL(r.valor_unitario)},
+      {h:'Vlr total',num:true,f:r=>BRL(Number(r.quantidade_contratada)*Number(r.valor_unitario))},
+      {act:true,f:r=>`<button class="linkbtn" data-ed="${r.id}">Editar</button><button class="linkbtn red" data-del="${r.id}">Excluir</button>`}
+    ],its,{empty:'Nenhum item contratado.'});
+    const fields=()=>[{key:'produto_id',label:'Produto',type:'select',required:true,options:(CACHE.produtos||[]).map(x=>({value:x.id,label:x.nome}))},
+      {key:'quantidade_contratada',label:'Quantidade contratada',type:'number',step:'0.001',required:true},
+      {key:'unidade',label:'Unidade',type:'select',options:['kg','un','dz','L','mç','t'].map(u=>({value:u,label:u})),default:'kg'},
+      {key:'valor_unitario',label:'Valor unitário (R$)',type:'number',step:'0.0001',default:0}];
+    $('#addItem').onclick=()=>openForm({title:'Novo item',fields:fields(),onSave:async o=>{o.projeto_id=id;const{error}=await sb.from('aprotunas_projeto_item').insert(o);if(error)throw error;toast('Item adicionado.');paintItens();}});
+    $$('#itensPane [data-ed]').forEach(b=>b.onclick=()=>{const r=its.find(x=>x.id===b.dataset.ed);openForm({title:'Editar item',fields:fields(),values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_projeto_item').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintItens();}});});
+    $$('#itensPane [data-del]').forEach(b=>b.onclick=()=>confirmDel('Excluir item?',async()=>{await sb.from('aprotunas_projeto_item').delete().eq('id',b.dataset.del);paintItens();}));
+  };
+  paintItens();
+}
+
+/* ============================================================
+   MÓDULO 5: RELATÓRIOS
+============================================================ */
+const REL_LIST=[
+  ['assoc_relacao','Relação de associados','associados'],
+  ['assoc_inadimplentes','Associados inadimplentes','associados'],
+  ['assoc_docs_venc','Documentos vencidos / a vencer','associados'],
+  ['prod_estoque','Saldo de estoque','producao'],
+  ['prod_receb','Recebimentos por produtor','producao'],
+  ['fin_pagar','Contas a pagar em aberto','financeiro'],
+  ['fin_receber','Contas a receber em aberto','financeiro'],
+  ['fin_fluxo','Fluxo de caixa (liquidado)','financeiro'],
+  ['proj_exec','Execução dos projetos','projetos'],
+];
+ROUTES.relatorios = async (v)=>{
+  await Promise.all([getProdutos(),getProjetos(),getAssociados()]);
+  const grp={associados:'Associados',producao:'Produção e estoque',financeiro:'Financeiro',projetos:'Projetos'};
+  const byG={}; REL_LIST.forEach(r=>{(byG[r[2]]=byG[r[2]]||[]).push(r);});
+  v.innerHTML=`<div class="page-head"><h2>Relatórios</h2></div>
+    ${Object.keys(grp).map(g=>`<div class="panel"><div class="panel-head"><h3>${grp[g]}</h3></div>
+      <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:8px">
+      ${(byG[g]||[]).map(r=>`<button class="btn ghost sm" data-rel="${r[0]}">${r[1]}</button>`).join('')}</div></div>`).join('')}
+    <div id="relOut"></div>`;
+  $$('[data-rel]',v).forEach(b=>b.onclick=()=>runRelatorio(b.dataset.rel,b.textContent));
+};
+function relTable(title,cols,rows){
+  const out=$('#relOut');
+  const csv=[cols.map(c=>c.h).join(';'),...rows.map(r=>cols.map(c=>String(c.raw?c.raw(r):c.f(r)).replace(/<[^>]+>/g,'')).join(';'))].join('\n');
+  out.innerHTML=`<div class="panel"><div class="panel-head"><h3>${esc(title)}</h3><div class="spacer"></div>
+    <span style="font-size:12px;color:var(--muted)">${rows.length} registro(s)</span>
+    <button class="btn sm" id="csvBtn">⬇ CSV</button></div>
+    <div class="panel-body flush">${tbl(cols,rows,{empty:'Sem dados.'})}</div></div>`;
+  out.scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('#csvBtn').onclick=()=>{const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=title.replace(/[^\w]+/g,'_')+'.csv';a.click();};
+}
+async function runRelatorio(id,title){
+  const out=$('#relOut'); loading(out);
+  const hoje=today();
+  if(id==='assoc_relacao'){
+    const {data}=await sb.from('aprotunas_associado').select('*').order('nome');
+    relTable(title,[{h:'Nome',f:r=>esc(r.nome)},{h:'CPF',f:r=>esc(r.cpf||'—')},{h:'Município',f:r=>esc(r.municipio||'—')},{h:'Telefone',f:r=>esc(r.telefone||'—')},{h:'Situação',f:r=>r.status}],data);
+  }
+  else if(id==='assoc_inadimplentes'){
+    const {data:c}=await sb.from('aprotunas_contribuicao').select('associado_id,valor,vencimento,data_pagamento');
+    await getAssociados();
+    const map={}; (c||[]).filter(x=>!x.data_pagamento&&x.vencimento&&x.vencimento<hoje).forEach(x=>{map[x.associado_id]=(map[x.associado_id]||0)+Number(x.valor||0);});
+    const rows=Object.keys(map).map(k=>({nome:assocNome(k),total:map[k]})).sort((a,b)=>b.total-a.total);
+    relTable(title,[{h:'Associado',f:r=>esc(r.nome)},{h:'Total em atraso',num:true,f:r=>BRL(r.total),raw:r=>r.total}],rows);
+  }
+  else if(id==='assoc_docs_venc'){
+    const {data}=await sb.from('aprotunas_documento').select('*').not('data_validade','is',null).order('data_validade');
+    await getAssociados();
+    const rows=(data||[]).filter(d=>{const dias=(new Date(d.data_validade)-new Date(hoje))/864e5;return dias<=60;});
+    relTable(title,[{h:'Associado',f:r=>esc(assocNome(r.associado_id))},{h:'Documento',f:r=>esc(r.tipo)},{h:'Validade',f:r=>dBR(r.data_validade)},{h:'Situação',f:r=>r.data_validade<hoje?'<span class="tag red">Vencido</span>':'<span class="tag amber">A vencer</span>',raw:r=>r.data_validade<hoje?'Vencido':'A vencer'}],rows);
+  }
+  else if(id==='prod_estoque'){
+    const {data}=await sb.from('aprotunas_v_estoque').select('*').order('nome');
+    relTable(title,[{h:'Produto',f:r=>esc(r.nome)},{h:'Un.',f:r=>esc(r.unidade)},{h:'Inicial',num:true,f:r=>NUM(r.estoque_inicial)},{h:'Entradas',num:true,f:r=>NUM(r.entradas)},{h:'Saídas',num:true,f:r=>NUM(r.saidas)},{h:'Saldo',num:true,f:r=>NUM(r.saldo)}],data);
+  }
+  else if(id==='prod_receb'){
+    const {data}=await sb.from('aprotunas_recebimento').select('associado_id,quantidade,valor_total');
+    await getAssociados();
+    const map={}; (data||[]).forEach(x=>{const m=map[x.associado_id]=map[x.associado_id]||{q:0,v:0};m.q+=Number(x.quantidade||0);m.v+=Number(x.valor_total||0);});
+    const rows=Object.keys(map).map(k=>({nome:assocNome(k),...map[k]})).sort((a,b)=>b.v-a.v);
+    relTable(title,[{h:'Produtor',f:r=>esc(r.nome)},{h:'Qtd total',num:true,f:r=>NUM(r.q),raw:r=>r.q},{h:'Valor total',num:true,f:r=>BRL(r.v),raw:r=>r.v}],rows);
+  }
+  else if(id==='fin_pagar'||id==='fin_receber'){
+    const tipo=id==='fin_pagar'?'despesa':'receita';
+    const {data}=await sb.from('aprotunas_lancamento').select('*').eq('tipo',tipo).is('data_pagamento',null).order('data_vencimento');
+    relTable(title,[{h:'Descrição',f:r=>esc(r.descricao)},{h:'Valor',num:true,f:r=>BRL(r.valor),raw:r=>r.valor},{h:'Vencimento',f:r=>dBR(r.data_vencimento)},{h:'Projeto',f:r=>esc(projNome(r.projeto_id))}],data);
+  }
+  else if(id==='fin_fluxo'){
+    const {data}=await sb.from('aprotunas_lancamento').select('*').not('data_pagamento','is',null).order('data_pagamento',{ascending:false}).limit(500);
+    relTable(title,[{h:'Data',f:r=>dBR(r.data_pagamento)},{h:'Descrição',f:r=>esc(r.descricao)},{h:'Tipo',f:r=>r.tipo},{h:'Valor',num:true,f:r=>(r.tipo==='despesa'?'-':'')+BRL(r.valor),raw:r=>(r.tipo==='despesa'?-1:1)*Number(r.valor)}],data);
+  }
+  else if(id==='proj_exec'){
+    const {data}=await sb.from('aprotunas_v_projeto_exec').select('*').order('nome');
+    relTable(title,[{h:'Projeto',f:r=>esc(r.nome)},{h:'Tipo',f:r=>r.tipo},{h:'Global',num:true,f:r=>BRL(r.valor_global),raw:r=>r.valor_global},{h:'Recebido',num:true,f:r=>BRL(r.valor_recebido),raw:r=>r.valor_recebido},{h:'% físico',num:true,f:r=>NUM(r.pct_fisico)+'%'},{h:'% financ.',num:true,f:r=>NUM(r.pct_financeiro)+'%'}],data);
+  }
+}
+
+/* ============================================================
+   CONFIGURAÇÕES (produtos + dados da associação)
+============================================================ */
+let CFG_SUB='produtos';
+ROUTES.config = async (v)=>{
+  v.innerHTML=`<div class="page-head"><h2>Configurações</h2></div>
+    <div class="subtabs" id="cfgSubs">
+      <button data-s="produtos" class="${CFG_SUB==='produtos'?'active':''}">Produtos</button>
+      <button data-s="associacao" class="${CFG_SUB==='associacao'?'active':''}">Dados da associação</button>
+    </div><div id="cfgPane"></div>`;
+  $$('#cfgSubs button').forEach(b=>b.onclick=()=>{CFG_SUB=b.dataset.s;$$('#cfgSubs button').forEach(x=>x.classList.toggle('active',x===b));paintCfg();});
+  paintCfg();
+};
+async function paintCfg(){
+  const p=$('#cfgPane'); loading(p);
+  if(CFG_SUB==='produtos'){
+    const {data:rows}=await sb.from('aprotunas_produto').select('*').order('nome');
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Catálogo de produtos</h3><div class="spacer"></div><button class="btn sm" id="addProd">+ Produto</button></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Produto',f:r=>`<b>${esc(r.nome)}</b>`},{h:'Unidade',f:r=>esc(r.unidade)},{h:'Categoria',f:r=>esc(r.categoria||'—')},
+        {h:'Estoque inicial',num:true,f:r=>NUM(r.estoque_inicial)},
+        {h:'Ativo',f:r=>r.ativo?'<span class="tag ok">Sim</span>':'<span class="tag grey">Não</span>'},
+        {act:true,f:r=>`<button class="linkbtn" data-ed="${r.id}">Editar</button>`}
+      ],rows,{empty:'Nenhum produto.'})}</div></div>`;
+    const fields=[{key:'nome',label:'Nome',required:true,full:true},
+      {key:'unidade',label:'Unidade',type:'select',options:['kg','un','dz','L','mç','t'].map(u=>({value:u,label:u})),default:'kg'},
+      {key:'categoria',label:'Categoria'},
+      {key:'estoque_inicial',label:'Estoque inicial',type:'number',step:'0.001',default:0},
+      {key:'ativo',label:'Ativo',type:'checkbox',checkLabel:'Produto ativo',default:true}];
+    $('#addProd').onclick=()=>openForm({title:'Novo produto',fields,onSave:async o=>{const{error}=await sb.from('aprotunas_produto').insert(o);if(error)throw error;CACHE.produtos=null;toast('Produto criado.');paintCfg();}});
+    $$('[data-ed]',p).forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.id===b.dataset.ed);openForm({title:'Editar produto',fields,values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_produto').update(o).eq('id',r.id);if(error)throw error;CACHE.produtos=null;toast('Salvo.');paintCfg();}});});
+    return;
+  }
+  if(CFG_SUB==='associacao'){
+    const {data:a}=await sb.from('aprotunas_associacao').select('*').limit(1).single();
+    p.innerHTML=`<div class="panel"><div class="panel-head"><h3>Dados da associação</h3><div class="spacer"></div><button class="btn sm" id="edAssociacao">Editar</button></div>
+      <div class="panel-body"><dl class="dl">
+        <dt>Nome</dt><dd>${esc(a.nome)}</dd><dt>CNPJ</dt><dd>${esc(a.cnpj||'—')}</dd>
+        <dt>Município</dt><dd>${esc(a.municipio||'—')}/${esc(a.uf||'')}</dd>
+        <dt>SIM</dt><dd>${esc(a.sim||'—')}</dd><dt>Telefone</dt><dd>${esc(a.telefone||'—')}</dd>
+        <dt>E-mail</dt><dd>${esc(a.email||'—')}</dd><dt>Endereço</dt><dd>${esc(a.endereco||'—')}</dd>
+      </dl></div></div>`;
+    $('#edAssociacao').onclick=()=>openForm({title:'Dados da associação',wide:true,values:a,fields:[
+      {key:'nome',label:'Nome',required:true,full:true},{key:'cnpj',label:'CNPJ'},{key:'sim',label:'SIM'},
+      {key:'municipio',label:'Município'},{key:'uf',label:'UF',default:'PR'},
+      {key:'telefone',label:'Telefone'},{key:'email',label:'E-mail'},{key:'endereco',label:'Endereço',full:true}
+    ],onSave:async o=>{const{error}=await sb.from('aprotunas_associacao').update(o).eq('id',a.id);if(error)throw error;toast('Salvo.');paintCfg();}});
+    return;
+  }
+}
+
+/* ============================================================
+   VISÃO DO ASSOCIADO (rotas próprias)
+============================================================ */
+ROUTES['meu-cadastro'] = async (v)=>{
+  const id=ME.associado_id;
+  if(!id){ v.innerHTML='<div class="empty">Seu login ainda não está vinculado a um cadastro de associado. Fale com a gestão.</div>'; return; }
+  const {data:a}=await sb.from('aprotunas_associado').select('*').eq('id',id).single();
+  v.innerHTML=`<div class="page-head"><h2>Meu cadastro</h2></div>
+    <div class="panel"><div class="panel-body"><dl class="dl">
+      <dt>Nome</dt><dd>${esc(a.nome)}</dd><dt>CPF</dt><dd>${esc(a.cpf||'—')}</dd>
+      <dt>Telefone</dt><dd>${esc(a.telefone||'—')}</dd><dt>E-mail</dt><dd>${esc(a.email||'—')}</dd>
+      <dt>Chave PIX</dt><dd>${esc(a.chave_pix||'—')}</dd>
+      <dt>Endereço</dt><dd>${esc([a.logradouro,a.numero,a.bairro].filter(Boolean).join(', ')||'—')}${a.municipio?` — ${esc(a.municipio)}/${esc(a.uf||'')}`:''}</dd>
+    </dl></div></div>`;
+};
+ROUTES['meus-documentos'] = async (v)=>{
+  const id=ME.associado_id;
+  if(!id){ v.innerHTML='<div class="empty">Login não vinculado.</div>'; return; }
+  const {data:rows}=await sb.from('aprotunas_documento').select('*').eq('associado_id',id).order('categoria');
+  const hoje=today();
+  const stTag=r=>!r.data_validade?'<span class="tag grey">Sem validade</span>':(r.data_validade<hoje?'<span class="tag red">Vencido</span>':'<span class="tag ok">Vigente</span>');
+  v.innerHTML=`<div class="page-head"><h2>Meus documentos</h2></div>
+    <div class="panel"><div class="panel-body flush">${tbl([
+      {h:'Documento',f:r=>esc(r.tipo)},{h:'Categoria',f:r=>esc(r.categoria)},{h:'Validade',f:r=>dBR(r.data_validade)},{h:'Situação',f:r=>stTag(r)},
+      {h:'Arquivo',f:r=>r.arquivo_path?`<button class="linkbtn" data-file="${r.id}">Baixar</button>`:'—'}
+    ],rows,{empty:'Nenhum documento.'})}</div></div>`;
+  $$('[data-file]',v).forEach(b=>b.onclick=async()=>{const r=rows.find(x=>x.id===b.dataset.file);const{data,error}=await sb.storage.from('aprotunas-docs').createSignedUrl(r.arquivo_path,120);if(!error)window.open(data.signedUrl,'_blank');});
+};
+ROUTES['minha-producao'] = async (v)=>{
+  const id=ME.associado_id;
+  if(!id){ v.innerHTML='<div class="empty">Login não vinculado.</div>'; return; }
+  await getProdutos();
+  const {data:rows}=await sb.from('aprotunas_producao_associado').select('*').eq('associado_id',id).order('ano',{ascending:false});
+  v.innerHTML=`<div class="page-head"><h2>Minha produção</h2></div>
+    <div class="panel"><div class="panel-body flush">${tbl([
+      {h:'Produto',f:r=>esc(prodNome(r.produto_id))},{h:'Ano',f:r=>r.ano},{h:'Qtd/ano',num:true,f:r=>`${NUM(r.quantidade_estimada)} ${esc(r.unidade||'')}`}
+    ],rows,{empty:'Nenhuma produção declarada.'})}</div></div>`;
+};
+ROUTES['minhas-contribuicoes'] = async (v)=>{
+  const id=ME.associado_id;
+  if(!id){ v.innerHTML='<div class="empty">Login não vinculado.</div>'; return; }
+  const {data:rows}=await sb.from('aprotunas_contribuicao').select('*').eq('associado_id',id).order('vencimento',{ascending:false});
+  const hoje=today();
+  const aberto=rows.filter(r=>!r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
+  const stTag=r=>r.data_pagamento?'<span class="tag ok">Pago</span>':(r.vencimento&&r.vencimento<hoje?'<span class="tag red">Atrasado</span>':'<span class="tag amber">Em aberto</span>');
+  v.innerHTML=`<div class="page-head"><h2>Minhas contribuições</h2><div class="spacer"></div><span style="font-size:13px;color:var(--muted)">Em aberto: <b style="color:var(--red)">${BRL(aberto)}</b></span></div>
+    <div class="panel"><div class="panel-body flush">${tbl([
+      {h:'Competência',f:r=>r.competencia?dBR(r.competencia).slice(3):'—'},{h:'Tipo',f:r=>esc(r.tipo)},{h:'Valor',num:true,f:r=>BRL(r.valor)},{h:'Vencimento',f:r=>dBR(r.vencimento)},{h:'Situação',f:r=>stTag(r)}
+    ],rows,{empty:'Nenhuma contribuição.'})}</div></div>`;
+};
+
+/* ================= START ================= */
+boot();
+</script>
+</body>
+</html>
