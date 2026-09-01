@@ -797,7 +797,8 @@ async function etiquetaRecebimento(id){
   if(!r){ toast('Recebimento não encontrado',true); return; }
   await Promise.all([getProdutos(),getAssociados(),getProjetos()]);
   const holder=document.createElement('div'); holder.style.display='none'; document.body.appendChild(holder);
-  const payload=`APROTUNAS|Rastreio:${r.rastreio}|${r.codigo}|Produtor:${assocNome(r.associado_id)}|Produto:${prodNome(r.produto_id)}|Qtd:${NUM(r.quantidade)}${prodUnid(r.produto_id)}|Data:${dBR(r.data)}${r.projeto_id?'|Projeto:'+projNome(r.projeto_id):''}`;
+  const base=location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,'');
+  const payload=`${base}rastreio.html?r=${encodeURIComponent(r.rastreio)}`;
   try{ new QRCode(holder,{text:payload,width:230,height:230,correctLevel:QRCode.CorrectLevel.M}); }
   catch(e){ toast('Biblioteca de QR indisponível (verifique a conexão).',true); holder.remove(); return; }
   setTimeout(()=>{
