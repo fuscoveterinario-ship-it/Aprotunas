@@ -653,26 +653,72 @@ async function paintAssocSub(a){
     const {data:rows}=await sb.from('aprotunas_lancamento').select('*').eq('origem','pagamento_produtor').eq('associado_id',a.id).order('created_at',{ascending:false});
     const aberto=rows.filter(r=>!r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
     const pago=rows.filter(r=>r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
+    const gest=isGestor();
     p.innerHTML=`
       <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
-        <div class="stat"><div class="k">Valor a ser pago</div><div class="v ${aberto>0?'':'blue'}" style="color:${aberto>0?'#b57e0e':'var(--green-d)'}">${BRL(aberto)}</div><div class="foot">em aberto</div></div>
+        <div class="stat"><div class="k">Valor a ser pago</div><div class="v" style="color:${aberto>0?'#b57e0e':'var(--green-d)'}">${BRL(aberto)}</div><div class="foot">em aberto</div></div>
         <div class="stat"><div class="k">Já pago</div><div class="v blue">${BRL(pago)}</div><div class="foot">liquidado</div></div>
       </div>
-      <div class="panel"><div class="panel-head"><h3>Pagamentos ao produtor</h3><div class="spacer"></div><span style="font-size:11.5px;color:var(--muted)">Vindo do Financeiro (gerado nas distribuições)</span></div>
+      <div class="panel"><div class="panel-head"><h3>Pagamentos ao produtor</h3><div class="spacer"></div>
+        ${gest?`<span id="pgSel" style="font-size:12.5px;color:var(--muted)">Selecione para pagar em lote</span> <button class="btn sm" id="pgPagar" disabled style="opacity:.5">Consolidar e pagar</button>`:'<span style="font-size:11.5px;color:var(--muted)">Vindo do Financeiro</span>'}</div>
       <div class="panel-body flush">${tbl([
+        ...(gest?[{h:'',f:r=>r.data_pagamento?'':`<input type="checkbox" class="pg-chk" data-id="${r.id}" data-valor="${r.valor}">`}]:[]),
         {h:'Descrição',f:r=>`<b>${esc(r.descricao)}</b>`},
         {h:'Projeto',f:r=>r.projeto_id?`<span class="tag blue">${esc(projNome(r.projeto_id))}</span>`:'—'},
         {h:'Valor',num:true,f:r=>BRL(r.valor)},
         {h:'Situação',f:r=>r.data_pagamento?`<span class="tag ok">Pago ${dBR(r.data_pagamento)}</span>`:'<span class="tag amber">Em aberto</span>'},
-        ...(isGestor()?[{act:true,f:r=>r.data_pagamento?`<button class="linkbtn" data-reab="${r.id}">Reabrir</button>`:`<button class="linkbtn" data-liq="${r.id}">Dar baixa</button>`}]:[])
+        {h:'Comprovante',f:r=>r.comprovante_path?`<button class="linkbtn" data-comp="${r.id}">📎 Baixar</button>`:'—'},
+        ...(gest?[{act:true,f:r=>r.data_pagamento?`<button class="linkbtn" data-reab="${r.id}">Reabrir</button>`:`<button class="linkbtn" data-liq="${r.id}">Dar baixa</button>`}]:[])
       ],rows,{empty:'Nenhum pagamento gerado ainda. Registre uma distribuição com valor unitário.'})}</div></div>`;
-    if(isGestor()){
-      $$('[data-liq]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_lancamento').update({data_pagamento:today()}).eq('id',b.dataset.liq);toast('Pagamento liquidado.');paintAssocSub(a);});
-      $$('[data-reab]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_lancamento').update({data_pagamento:null}).eq('id',b.dataset.reab);paintAssocSub(a);});
+    $$('[data-comp]',p).forEach(b=>b.onclick=()=>baixarArquivo(rows.find(x=>x.id===b.dataset.comp).comprovante_path));
+    if(gest){
+      const upd=()=>{ const sel=$$('.pg-chk',p).filter(c=>c.checked); const tot=sel.reduce((s,c)=>s+Number(c.dataset.valor||0),0);
+        const btn=$('#pgPagar',p), lbl=$('#pgSel',p);
+        if(sel.length){ btn.disabled=false; btn.style.opacity='1'; btn.textContent=`Consolidar e pagar (${BRL(tot)})`; lbl.textContent=`${sel.length} selecionado(s)`; }
+        else { btn.disabled=true; btn.style.opacity='.5'; btn.textContent='Consolidar e pagar'; lbl.textContent='Selecione para pagar em lote'; } };
+      $$('.pg-chk',p).forEach(c=>c.onchange=upd);
+      $('#pgPagar',p).onclick=()=>{ const sel=$$('.pg-chk',p).filter(c=>c.checked); if(sel.length) consolidarPagamento(a, sel.map(c=>({id:c.dataset.id,valor:Number(c.dataset.valor)}))); };
+      $$('[data-liq]',p).forEach(b=>b.onclick=()=>consolidarPagamento(a,[{id:b.dataset.liq,valor:Number(rows.find(x=>x.id===b.dataset.liq)?.valor||0)}]));
+      $$('[data-reab]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_lancamento').update({data_pagamento:null,comprovante_path:null}).eq('id',b.dataset.reab);toast('Reaberto.');paintAssocSub(a);});
     }
     requestAnimationFrame(fitStatValues);
     return;
   }
+}
+// Consolida pagamentos ao produtor: anexa comprovante e dá baixa na data escolhida (hoje por padrão)
+function consolidarPagamento(a, itens){
+  const total=itens.reduce((s,x)=>s+Number(x.valor||0),0);
+  closeModal();
+  const o=document.createElement('div'); o.className='overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-head"><h3>Consolidar pagamento</h3><button class="x">&times;</button></div>
+   <form id="cpForm"><div class="modal-body">
+     <p style="font-size:14px;margin:0 0 14px">Pagar <b>${itens.length}</b> lançamento(s) — total <b style="color:var(--green-d)">${BRL(total)}</b> — ao produtor <b>${esc(a.nome)}</b>.</p>
+     <div class="form-grid">
+       <div class="field"><label>Data do pagamento</label><input class="inp" type="date" id="cpData" value="${today()}"></div>
+       <div class="field"><label>Forma de pagamento</label><input class="inp" id="cpForma" placeholder="PIX, transferência…"></div>
+     </div>
+     <div class="field"><label>Comprovante de pagamento (PDF/imagem)</label><input class="inp" type="file" id="cpFile" accept=".pdf,image/*">
+       <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Opcional — o mesmo comprovante é anexado a todos os selecionados.</div></div>
+   </div>
+   <div class="modal-foot"><button type="button" class="btn ghost" data-close>Cancelar</button><button type="submit" class="btn" id="cpSave">Confirmar pagamento</button></div>
+   </form></div>`;
+  document.body.appendChild(o);
+  o.addEventListener('click',e=>{ if(e.target===o||e.target.dataset.close!==undefined||e.target.classList.contains('x')) closeModal(); });
+  $('#cpForm',o).addEventListener('submit',async e=>{
+    e.preventDefault();
+    const btn=$('#cpSave',o); btn.disabled=true; btn.textContent='Salvando…';
+    try{
+      const dt=$('#cpData',o).value||today();
+      const forma=$('#cpForma',o).value||null;
+      const file=$('#cpFile',o).files[0];
+      let path=null;
+      if(file){ const ext=(file.name.split('.').pop()||'pdf'); path=`${a.id}/pagamentos/${Date.now()}.${ext}`;
+        const {error:e0}=await sb.storage.from('aprotunas-docs').upload(path,file,{upsert:true}); if(e0) throw e0; }
+      const patch={data_pagamento:dt}; if(path) patch.comprovante_path=path; if(forma) patch.observacao=('Pago via '+forma);
+      const {error}=await sb.from('aprotunas_lancamento').update(patch).in('id', itens.map(x=>x.id)); if(error) throw error;
+      closeModal(); toast('Pagamento registrado e baixado.'); paintAssocSub(a);
+    }catch(err){ toast(err.message||'Erro ao pagar',true); btn.disabled=false; btn.textContent='Confirmar pagamento'; }
+  });
 }
 async function uploadDoc(assocId,docId,file){
   const ext=file.name.split('.').pop();
