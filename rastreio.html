@@ -31,6 +31,11 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:11px 16px;margin:0;font-size:
 dt{color:var(--muted);font-weight:600}
 dd{margin:0;text-align:right;font-weight:600}
 .ic{margin-right:6px}
+.dist{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.dist-h{font-size:11px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.dist-item{background:var(--green-l);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.dist-item .dest{font-weight:700;color:var(--green-d)}
+.dist-item .meta{font-size:12.5px;color:var(--muted);margin-top:2px}
 .ft{padding:16px 24px 22px;text-align:center;color:var(--muted);font-size:11.5px;border-top:1px solid var(--line);margin-top:14px}
 .ft b{color:var(--green-d)}
 .loading,.erro{padding:60px 24px;text-align:center;color:var(--muted)}
@@ -79,6 +84,14 @@ async function run(){
         <dt><span class="ic">📅</span>Recebido em</dt><dd>${dBR(d.data)}</dd>
         ${d.projeto?`<dt><span class="ic">🏫</span>Projeto</dt><dd>${esc(d.projeto)}</dd>`:''}
       </dl>
+      ${(d.distribuicoes&&d.distribuicoes.length)?`
+      <div class="dist">
+        <div class="dist-h">🚚 Para onde foi</div>
+        ${d.distribuicoes.map(x=>`<div class="dist-item">
+          <div class="dest">${esc(x.local||x.projeto||'Destino')}</div>
+          <div class="meta">Enviado em <b>${dBR(x.data)}</b> · ${NUM(x.quantidade)} ${esc(x.unidade||'')}${x.projeto&&x.local?' · '+esc(x.projeto):''}</div>
+        </div>`).join('')}
+      </div>`:''}
       <div class="ft">Alimento da agricultura familiar, rastreado pela <b>${esc(d.associacao||'APROTUNAS')}</b> — da origem à sua mesa.</div>
     </div>`;
 }
