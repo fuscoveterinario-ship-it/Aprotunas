@@ -1148,8 +1148,12 @@ async function openProjeto(id){
       {key:'quantidade_contratada',label:'Quantidade contratada',type:'number',step:'0.001',required:true},
       {key:'unidade',label:'Unidade',type:'select',options:['kg','un','dz','L','mç','t'].map(u=>({value:u,label:u})),default:'kg'},
       {key:'valor_unitario',label:'Valor unitário (R$)',type:'number',step:'0.0001',default:0}];
-    $('#addItem').onclick=()=>openForm({title:'Novo item',fields:fields(),onSave:async o=>{o.projeto_id=id;const{error}=await sb.from('aprotunas_projeto_item').insert(o);if(error)throw error;toast('Item adicionado.');paintItens();}});
-    $$('#itensPane [data-ed]').forEach(b=>b.onclick=()=>{const r=its.find(x=>x.id===b.dataset.ed);openForm({title:'Editar item',fields:fields(),values:r,onSave:async o=>{const{error}=await sb.from('aprotunas_projeto_item').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintItens();}});});
+    const checkGlobal=(o,editId)=>{ const g=Number(pr.valor_global)||0; if(g<=0) return;
+      const outros=(its||[]).filter(x=>x.id!==editId).reduce((s,x)=>s+Number(x.quantidade_contratada||0)*Number(x.valor_unitario||0),0);
+      const novo=(Number(o.quantidade_contratada)||0)*(Number(o.valor_unitario)||0);
+      if(outros+novo>g+0.001){ throw new Error(`O total dos itens (${BRL(outros+novo)}) passa do valor global do projeto (${BRL(g)}). Ajuste a quantidade/preço ou aumente o valor global.`); } };
+    $('#addItem').onclick=()=>openForm({title:'Novo item',fields:fields(),onSave:async o=>{checkGlobal(o,null);o.projeto_id=id;const{error}=await sb.from('aprotunas_projeto_item').insert(o);if(error)throw error;toast('Item adicionado.');paintItens();}});
+    $$('#itensPane [data-ed]').forEach(b=>b.onclick=()=>{const r=its.find(x=>x.id===b.dataset.ed);openForm({title:'Editar item',fields:fields(),values:r,onSave:async o=>{checkGlobal(o,r.id);const{error}=await sb.from('aprotunas_projeto_item').update(o).eq('id',r.id);if(error)throw error;toast('Salvo.');paintItens();}});});
     $$('#itensPane [data-del]').forEach(b=>b.onclick=()=>confirmDel('Excluir item?',async()=>{await sb.from('aprotunas_projeto_item').delete().eq('id',b.dataset.del);paintItens();}));
   };
   paintItens();
