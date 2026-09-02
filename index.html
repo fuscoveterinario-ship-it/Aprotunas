@@ -286,7 +286,8 @@ const TABS_GESTOR = [
 ];
 const TABS_ASSOC = [
   ['meu-cadastro','Meu cadastro'],['meus-documentos','Meus documentos'],
-  ['minha-producao','Minha produção'],['minhas-contribuicoes','Minhas contribuições']
+  ['minha-producao','Minha produção'],['minhas-contribuicoes','Minhas contribuições'],
+  ['meus-pagamentos','Meus pagamentos']
 ];
 function buildTabs(){
   const list = isAssoc()?TABS_ASSOC:TABS_GESTOR;
@@ -502,7 +503,7 @@ async function openAssociado(id){
   const v=$('#view'); loading(v);
   const { data:a } = await sb.from('aprotunas_associado').select('*').eq('id',id).single();
   await Promise.all([getProdutos(),getProjetos()]);
-  const subs=[['dados','Dados'],['propriedades','Propriedades'],['documentos','Documentos'],['producao','Produção'],['contribuicoes','Contribuições']];
+  const subs=[['dados','Dados'],['propriedades','Propriedades'],['documentos','Documentos'],['producao','Produção'],['contribuicoes','Contribuições'],['pagamentos','Pagamentos']];
   v.innerHTML=`
     <div class="breadcrumb" id="bcAssoc">← Associados</div>
     <div class="page-head"><div><h2>${esc(a.nome)}</h2>
@@ -645,6 +646,31 @@ async function paintAssocSub(a){
       $$('[data-reab]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_contribuicao').update({data_pagamento:null}).eq('id',b.dataset.reab);paintAssocSub(a);});
       $$('[data-del]',p).forEach(b=>b.onclick=()=>confirmDel('Excluir contribuição?',async()=>{await sb.from('aprotunas_contribuicao').delete().eq('id',b.dataset.del);paintAssocSub(a);}));
     }
+    return;
+  }
+  if(ASSOC_SUB==='pagamentos'){
+    await getProjetos();
+    const {data:rows}=await sb.from('aprotunas_lancamento').select('*').eq('origem','pagamento_produtor').eq('associado_id',a.id).order('created_at',{ascending:false});
+    const aberto=rows.filter(r=>!r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
+    const pago=rows.filter(r=>r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
+    p.innerHTML=`
+      <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        <div class="stat"><div class="k">Valor a ser pago</div><div class="v ${aberto>0?'':'blue'}" style="color:${aberto>0?'#b57e0e':'var(--green-d)'}">${BRL(aberto)}</div><div class="foot">em aberto</div></div>
+        <div class="stat"><div class="k">Já pago</div><div class="v blue">${BRL(pago)}</div><div class="foot">liquidado</div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><h3>Pagamentos ao produtor</h3><div class="spacer"></div><span style="font-size:11.5px;color:var(--muted)">Vindo do Financeiro (gerado nas distribuições)</span></div>
+      <div class="panel-body flush">${tbl([
+        {h:'Descrição',f:r=>`<b>${esc(r.descricao)}</b>`},
+        {h:'Projeto',f:r=>r.projeto_id?`<span class="tag blue">${esc(projNome(r.projeto_id))}</span>`:'—'},
+        {h:'Valor',num:true,f:r=>BRL(r.valor)},
+        {h:'Situação',f:r=>r.data_pagamento?`<span class="tag ok">Pago ${dBR(r.data_pagamento)}</span>`:'<span class="tag amber">Em aberto</span>'},
+        ...(isGestor()?[{act:true,f:r=>r.data_pagamento?`<button class="linkbtn" data-reab="${r.id}">Reabrir</button>`:`<button class="linkbtn" data-liq="${r.id}">Dar baixa</button>`}]:[])
+      ],rows,{empty:'Nenhum pagamento gerado ainda. Registre uma distribuição com valor unitário.'})}</div></div>`;
+    if(isGestor()){
+      $$('[data-liq]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_lancamento').update({data_pagamento:today()}).eq('id',b.dataset.liq);toast('Pagamento liquidado.');paintAssocSub(a);});
+      $$('[data-reab]',p).forEach(b=>b.onclick=async()=>{await sb.from('aprotunas_lancamento').update({data_pagamento:null}).eq('id',b.dataset.reab);paintAssocSub(a);});
+    }
+    requestAnimationFrame(fitStatValues);
     return;
   }
 }
@@ -1291,6 +1317,26 @@ ROUTES['minhas-contribuicoes'] = async (v)=>{
       {h:'Comprovante',f:r=>r.comprovante_path?`<button class="linkbtn" data-comp="${r.id}">📎 Baixar</button>`:'—'}
     ],rows,{empty:'Nenhuma contribuição.'})}</div></div>`;
   $$('[data-comp]',v).forEach(b=>b.onclick=()=>baixarArquivo(rows.find(x=>x.id===b.dataset.comp).comprovante_path));
+};
+ROUTES['meus-pagamentos'] = async (v)=>{
+  const id=ME.associado_id;
+  if(!id){ v.innerHTML='<div class="empty">Login não vinculado.</div>'; return; }
+  await getProjetos();
+  const {data:rows}=await sb.from('aprotunas_lancamento').select('*').eq('origem','pagamento_produtor').eq('associado_id',id).order('created_at',{ascending:false});
+  const aberto=rows.filter(r=>!r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
+  const pago=rows.filter(r=>r.data_pagamento).reduce((s,r)=>s+Number(r.valor||0),0);
+  v.innerHTML=`<div class="page-head"><h2>Meus pagamentos</h2></div>
+    <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+      <div class="stat"><div class="k">Valor a ser pago</div><div class="v" style="color:${aberto>0?'#b57e0e':'var(--green-d)'}">${BRL(aberto)}</div><div class="foot">em aberto</div></div>
+      <div class="stat"><div class="k">Já recebido</div><div class="v blue">${BRL(pago)}</div><div class="foot">pago pela associação</div></div>
+    </div>
+    <div class="panel"><div class="panel-body flush">${tbl([
+      {h:'Descrição',f:r=>`<b>${esc(r.descricao)}</b>`},
+      {h:'Projeto',f:r=>r.projeto_id?esc(projNome(r.projeto_id)):'—'},
+      {h:'Valor',num:true,f:r=>BRL(r.valor)},
+      {h:'Situação',f:r=>r.data_pagamento?`<span class="tag ok">Pago ${dBR(r.data_pagamento)}</span>`:'<span class="tag amber">A receber</span>'}
+    ],rows,{empty:'Nenhum pagamento ainda.'})}</div></div>`;
+  requestAnimationFrame(fitStatValues);
 };
 
 /* ================= START ================= */
