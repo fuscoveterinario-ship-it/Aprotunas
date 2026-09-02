@@ -48,6 +48,9 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .btn.danger{background:var(--red)} .btn.danger:hover{background:#96271b}
 .btn.amber{background:var(--amber);color:#3a2c05} .btn.amber:hover{background:#c9932c}
 .err{color:var(--red);font-size:12.5px;margin-top:8px;min-height:16px}
+.rastbox{margin-top:18px}
+.rastdiv{text-align:center;border-top:1px solid var(--line);margin:6px 0 14px;position:relative}
+.rastdiv span{position:relative;top:-9px;background:var(--surface);padding:0 12px;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
 
 /* App shell */
 #app{min-height:100vh;display:flex;flex-direction:column}
@@ -171,6 +174,16 @@ td.act{text-align:right;white-space:nowrap}
       <button class="btn block" type="submit" id="loginBtn">Entrar</button>
       <div class="err" id="loginErr"></div>
     </form>
+    <div class="rastbox">
+      <div class="rastdiv"><span>consultar rastreabilidade</span></div>
+      <form id="rastForm">
+        <div style="display:flex;gap:8px">
+          <input class="inp" id="rastInp" inputmode="numeric" placeholder="Nº de rastreio (ex.: 2001092026)" style="flex:1">
+          <button class="btn" type="submit" style="white-space:nowrap">Ver</button>
+        </div>
+        <div class="err" id="rastErr"></div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -239,6 +252,16 @@ $('#loginForm').addEventListener('submit', async e=>{
   await boot();
 });
 $('#logoutBtn').addEventListener('click', async ()=>{ await sb.auth.signOut(); location.reload(); });
+
+// Consulta rápida de rastreabilidade na tela de entrada (abre a página pública)
+$('#rastForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const err=$('#rastErr'); err.textContent='';
+  const num=$('#rastInp').value.trim();
+  if(!num){ err.textContent='Digite o número de rastreio.'; return; }
+  const base=location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,'');
+  window.open(base+'rastreio.html?r='+encodeURIComponent(num),'_blank');
+});
 
 async function boot(){
   const { data:{ session } } = await sb.auth.getSession();
