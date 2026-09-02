@@ -1083,8 +1083,11 @@ ROUTES.projetos = async (v)=>{
       {h:'Exec. física',num:true,f:r=>`${NUM(r.pct_fisico)}%`},
       {h:'Exec. financ.',num:true,f:r=>`${NUM(r.pct_financeiro)}%`},
       {h:'Situação',f:r=>r.status==='ativo'?'<span class="tag ok">Ativo</span>':`<span class="tag grey">${esc(r.status)}</span>`},
+      {act:true,f:r=>`<button class="linkbtn" data-ed="${r.projeto_id}">Editar</button><button class="linkbtn red" data-del="${r.projeto_id}">Excluir</button>`},
     ],exec,{onRow:r=>openProjeto(r.projeto_id),empty:'Nenhum projeto cadastrado.'})}</div></div>`;
   wireRows($('.panel',v),exec,r=>openProjeto(r.projeto_id));
+  $$('[data-ed]',v).forEach(b=>b.onclick=async()=>{const {data:pr}=await sb.from('aprotunas_projeto').select('*').eq('id',b.dataset.ed).single();if(pr)formProjeto(pr);});
+  $$('[data-del]',v).forEach(b=>b.onclick=()=>confirmDel('Excluir este projeto? Os itens e vínculos serão removidos.',async()=>{const{error}=await sb.from('aprotunas_projeto').delete().eq('id',b.dataset.del);if(error)throw error;CACHE.projetos=null;ROUTES.projetos($('#view'));}));
   $('#novoProj').onclick=()=>formProjeto();
 };
 function projFields(){return [
