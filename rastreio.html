@@ -67,6 +67,8 @@ async function run(){
   if(error){ card.innerHTML=erroHTML('Erro na consulta','Tente novamente em instantes.'); return; }
   if(!data){ card.innerHTML=erroHTML('Rastreio não encontrado','O código '+esc(r)+' não consta na base da associação.'); return; }
   const d=data;
+  const distribuido=(d.distribuicoes||[]).reduce((s,x)=>s+Number(x.quantidade||0),0);
+  const saldo=Number(d.quantidade||0)-distribuido;
   card.innerHTML=`
     <div class="hd">
       <img src="${LOGO}" alt="APROTUNAS">
@@ -83,6 +85,7 @@ async function run(){
         <dt><span class="ic">📍</span>Origem</dt><dd>${esc(d.municipio||'—')}${d.uf?'/'+esc(d.uf):''}</dd>
         <dt><span class="ic">📅</span>Recebido em</dt><dd>${dBR(d.data)}</dd>
         ${d.projeto?`<dt><span class="ic">🏫</span>Projeto</dt><dd>${esc(d.projeto)}</dd>`:''}
+        <dt><span class="ic">📦</span>Em estoque</dt><dd><b style="color:${saldo<=0?'#c0392b':'var(--green-d)'}">${NUM(saldo)} ${esc(d.unidade||'')}</b></dd>
       </dl>
       ${(d.distribuicoes&&d.distribuicoes.length)?`
       <div class="dist">
