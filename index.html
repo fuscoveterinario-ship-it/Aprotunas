@@ -780,14 +780,13 @@ async function formDistribuicao(row){
        <div style="font-weight:600;margin-bottom:4px">Produtores de origem (rastreabilidade)</div>
        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Marque de quais recebimentos (produtores) sai este produto e a quantidade de cada. O total é somado automaticamente.</div>
        <div id="d-origens"><div class="loading"><div class="spinner"></div></div></div>
-       <div style="text-align:right;margin-top:8px;font-size:13px">Total: <b id="d-total" style="color:var(--green-d)">0</b> <span id="d-unid"></span></div>
      </div>
    </div>
    <div class="modal-foot"><button type="button" class="btn ghost" data-close>Cancelar</button><button type="submit" class="btn" id="dsave">Salvar</button></div>
    </form></div>`;
   document.body.appendChild(o);
   o.addEventListener('click',e=>{ if(e.target===o||e.target.dataset.close!==undefined||e.target.classList.contains('x')) closeModal(); });
-  function recalc(){ let tot=0; $$('.d-qtd',o).forEach(i=>{ const chk=$(`.d-chk[data-rec="${i.dataset.rec}"]`,o); const v=Number(i.value)||0; if(chk&&chk.checked) tot+=v; }); $('#d-total',o).textContent=NUM(tot); }
+  function recalc(){ const el=$('#d-total',o); if(!el) return; let tot=0; $$('.d-qtd',o).forEach(i=>{ const chk=$(`.d-chk[data-rec="${i.dataset.rec}"]`,o); const v=Number(i.value)||0; if(chk&&chk.checked) tot+=v; }); el.textContent=NUM(tot); }
   const loadOrigens=async ()=>{
     const prodId=$('#d-prod',o).value;
     const box=$('#d-origens',o); box.innerHTML='<div class="loading"><div class="spinner"></div></div>';
@@ -795,7 +794,7 @@ async function formDistribuicao(row){
     const jaMap={}; origExist.forEach(x=>jaMap[x.recebimento_id]=Number(x.quantidade));
     const list=(sal||[]).map(s=>{ const extra=jaMap[s.recebimento_id]||0; return {...s, disp:Number(s.saldo_disponivel)+extra, pre:extra}; })
                         .filter(s=>s.disp>0 || s.pre>0);
-    const um=(CACHE.produtos||[]).find(x=>x.id===prodId); $('#d-unid',o).textContent=um?um.unidade:'';
+    const um=(CACHE.produtos||[]).find(x=>x.id===prodId); const un=$('#d-unid',o); if(un) un.textContent=um?um.unidade:'';
     if(!list.length){ box.innerHTML='<div style="font-size:12.5px;color:var(--muted)">Nenhum recebimento com saldo para este produto. Registre um recebimento deste produto primeiro.</div>'; recalc(); return; }
     box.innerHTML=list.map(s=>`<div style="display:grid;grid-template-columns:22px 1fr 120px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">
        <input type="checkbox" class="d-chk" data-rec="${s.recebimento_id}" ${s.pre?'checked':''}>
