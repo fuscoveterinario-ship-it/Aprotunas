@@ -71,7 +71,7 @@ async function run(){
   card.innerHTML=`
     <div class="hd">
       <img src="${LOGO}" alt="APROTUNAS">
-      <div class="assoc">${esc(d.associacao||'APROTUNAS')}${d.sim?' · SIM '+esc(d.sim):''}</div>
+      <div class="assoc">${esc(d.associacao||'APROTUNAS')}</div>
       <h1>Rastreabilidade do produto</h1>
       <span class="badge">✓ ORIGEM VERIFICADA</span>
     </div>
@@ -94,7 +94,7 @@ async function run(){
           <div class="meta">Enviado em <b>${dBR(x.data)}</b> · ${NUM(x.quantidade)} ${esc(x.unidade||'')}${x.projeto&&x.local?' · '+esc(x.projeto):''}</div>
         </div>`).join('')}
       </div>`:''}
-      <div class="ft">Alimento da agricultura familiar, rastreado pela <b>${esc(d.associacao||'APROTUNAS')}</b> — da origem à sua mesa.</div>
+      <div class="ft">Alimento da agricultura familiar, rastreado pela<br><b>${esc(d.associacao||'APROTUNAS')}</b><br>da origem à sua mesa.</div>
     </div>`;
 }
 function erroHTML(t,s){ return `<div class="hd"><img src="${LOGO}" alt="APROTUNAS"><h1>Rastreabilidade APROTUNAS</h1></div>
