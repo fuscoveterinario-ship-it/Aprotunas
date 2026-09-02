@@ -1168,15 +1168,25 @@ const REL_LIST=[
   ['fin_fluxo','Fluxo de caixa (liquidado)','financeiro'],
   ['proj_exec','Execução dos projetos','projetos'],
 ];
+let REL_DE='', REL_ATE='';
 ROUTES.relatorios = async (v)=>{
   await Promise.all([getProdutos(),getProjetos(),getAssociados()]);
+  if(!REL_DE) REL_DE=new Date().getFullYear()+'-01-01';
+  if(!REL_ATE) REL_ATE=today();
   const grp={associados:'Associados',producao:'Produção e estoque',financeiro:'Financeiro',projetos:'Projetos'};
   const byG={}; REL_LIST.forEach(r=>{(byG[r[2]]=byG[r[2]]||[]).push(r);});
   v.innerHTML=`<div class="page-head"><h2>Relatórios</h2></div>
+    <div class="panel"><div class="panel-body filters" style="align-items:flex-end">
+      <div><label style="display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px">Período de referência — De</label><input class="inp" type="date" id="relDe" value="${REL_DE}"></div>
+      <div><label style="display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px">Até</label><input class="inp" type="date" id="relAte" value="${REL_ATE}"></div>
+      <span style="font-size:11.5px;color:var(--muted);max-width:340px">Aplica-se aos relatórios por data: recebimentos por produtor, rastreabilidade e fluxo de caixa.</span>
+    </div></div>
     ${Object.keys(grp).map(g=>`<div class="panel"><div class="panel-head"><h3>${grp[g]}</h3></div>
       <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:8px">
       ${(byG[g]||[]).map(r=>`<button class="btn ghost sm" data-rel="${r[0]}">${r[1]}</button>`).join('')}</div></div>`).join('')}
     <div id="relOut"></div>`;
+  $('#relDe',v).onchange=e=>REL_DE=e.target.value;
+  $('#relAte',v).onchange=e=>REL_ATE=e.target.value;
   $$('[data-rel]',v).forEach(b=>b.onclick=()=>runRelatorio(b.dataset.rel,b.textContent));
 };
 function relTable(title,cols,rows){
@@ -1192,6 +1202,8 @@ function relTable(title,cols,rows){
 async function runRelatorio(id,title){
   const out=$('#relOut'); loading(out);
   const hoje=today();
+  const de=REL_DE||null, ate=REL_ATE||null;
+  const periodoTxt=(de&&ate)?` · período ${dBR(de)} a ${dBR(ate)}`:'';
   if(id==='assoc_relacao'){
     const {data}=await sb.from('aprotunas_associado').select('*').order('nome');
     relTable(title,[{h:'Nome',f:r=>esc(r.nome)},{h:'CPF',f:r=>esc(r.cpf||'—')},{h:'Município',f:r=>esc(r.municipio||'—')},{h:'Telefone',f:r=>esc(r.telefone||'—')},{h:'Situação',f:r=>r.status}],data);
@@ -1218,15 +1230,19 @@ async function runRelatorio(id,title){
     relTable(title,[{h:'Produto',f:r=>esc(r.nome)},{h:'Un.',f:r=>esc(r.unidade)},{h:'Inicial',num:true,f:r=>NUM(r.estoque_inicial)},{h:'Entradas',num:true,f:r=>NUM(r.entradas)},{h:'Saídas',num:true,f:r=>NUM(r.saidas)},{h:'Saldo',num:true,f:r=>NUM(r.saldo)}],data);
   }
   else if(id==='prod_receb'){
-    const {data}=await sb.from('aprotunas_recebimento').select('associado_id,quantidade');
+    let q=sb.from('aprotunas_recebimento').select('associado_id,quantidade,data');
+    if(de) q=q.gte('data',de); if(ate) q=q.lte('data',ate);
+    const {data}=await q;
     await getAssociados();
     const map={}; (data||[]).forEach(x=>{const m=map[x.associado_id]=map[x.associado_id]||{q:0,n:0};m.q+=Number(x.quantidade||0);m.n+=1;});
     const rows=Object.keys(map).map(k=>({nome:assocNome(k),...map[k]})).sort((a,b)=>b.q-a.q);
-    relTable(title,[{h:'Produtor',f:r=>esc(r.nome)},{h:'Recebimentos',num:true,f:r=>r.n,raw:r=>r.n},{h:'Qtd total',num:true,f:r=>NUM(r.q),raw:r=>r.q}],rows);
+    relTable(title+periodoTxt,[{h:'Produtor',f:r=>esc(r.nome)},{h:'Recebimentos',num:true,f:r=>r.n,raw:r=>r.n},{h:'Qtd total',num:true,f:r=>NUM(r.q),raw:r=>r.q}],rows);
   }
   else if(id==='prod_rastreio'){
     await Promise.all([getAssociados(),getProdutos(),getProjetos()]);
-    const {data:recs}=await sb.from('aprotunas_v_recebimento_saldo').select('*').order('data',{ascending:false});
+    let qr=sb.from('aprotunas_v_recebimento_saldo').select('*').order('data',{ascending:false});
+    if(de) qr=qr.gte('data',de); if(ate) qr=qr.lte('data',ate);
+    const {data:recs}=await qr;
     // destinos por recebimento
     let destMap={};
     const {data:origs}=await sb.from('aprotunas_distribuicao_origem').select('recebimento_id,quantidade,aprotunas_distribuicao(data,local_entrega,projeto_id,codigo)');
@@ -1239,7 +1255,7 @@ async function runRelatorio(id,title){
                projeto:projNome(r.projeto_id), recebido:Number(r.quantidade), distribuido:Number(r.distribuido),
                saldo:Number(r.saldo_disponivel), destinos:destinos||'—' };
     }).sort((a,b)=> (a.mes<b.mes?1:a.mes>b.mes?-1:0) || (a.projeto>b.projeto?1:-1) || (a.produtor>b.produtor?1:-1));
-    relTable(title,[
+    relTable(title+periodoTxt,[
       {h:'Mês',f:r=>esc(r.mes)},
       {h:'Rastreio',f:r=>`<b>${esc(r.rastreio)}</b>`},
       {h:'Produtor',f:r=>esc(r.produtor)},
@@ -1257,8 +1273,12 @@ async function runRelatorio(id,title){
     relTable(title,[{h:'Descrição',f:r=>esc(r.descricao)},{h:'Valor',num:true,f:r=>BRL(r.valor),raw:r=>r.valor},{h:'Vencimento',f:r=>dBR(r.data_vencimento)},{h:'Projeto',f:r=>esc(projNome(r.projeto_id))}],data);
   }
   else if(id==='fin_fluxo'){
-    const {data}=await sb.from('aprotunas_lancamento').select('*').not('data_pagamento','is',null).order('data_pagamento',{ascending:false}).limit(500);
-    relTable(title,[{h:'Data',f:r=>dBR(r.data_pagamento)},{h:'Descrição',f:r=>esc(r.descricao)},{h:'Tipo',f:r=>r.tipo},{h:'Valor',num:true,f:r=>(r.tipo==='despesa'?'-':'')+BRL(r.valor),raw:r=>(r.tipo==='despesa'?-1:1)*Number(r.valor)}],data);
+    let qf=sb.from('aprotunas_lancamento').select('*').not('data_pagamento','is',null).order('data_pagamento',{ascending:false}).limit(1000);
+    if(de) qf=qf.gte('data_pagamento',de); if(ate) qf=qf.lte('data_pagamento',ate);
+    const {data}=await qf;
+    const entradas=(data||[]).filter(r=>r.tipo==='receita').reduce((s,r)=>s+Number(r.valor||0),0);
+    const saidas=(data||[]).filter(r=>r.tipo==='despesa').reduce((s,r)=>s+Number(r.valor||0),0);
+    relTable(title+periodoTxt+` · entradas ${BRL(entradas)} · saídas ${BRL(saidas)} · saldo ${BRL(entradas-saidas)}`,[{h:'Data',f:r=>dBR(r.data_pagamento)},{h:'Descrição',f:r=>esc(r.descricao)},{h:'Tipo',f:r=>r.tipo},{h:'Valor',num:true,f:r=>(r.tipo==='despesa'?'-':'')+BRL(r.valor),raw:r=>(r.tipo==='despesa'?-1:1)*Number(r.valor)}],data);
   }
   else if(id==='proj_exec'){
     const {data}=await sb.from('aprotunas_v_projeto_exec').select('*').order('nome');
