@@ -810,6 +810,8 @@ async function etiquetaRecebimento(id){
 }
 function abrirEtiqueta(r,qrSrc,dists){
   dists=dists||[];
+  const distribuido=dists.reduce((s,x)=>s+Number(x.quantidade||0),0);
+  const saldo=Number(r.quantidade||0)-distribuido;
   const w=window.open('','_blank','width=430,height=640');
   if(!w){ toast('Permita pop-ups para abrir a etiqueta.',true); return; }
   const linha=(k,v)=>`<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`;
@@ -848,7 +850,9 @@ function abrirEtiqueta(r,qrSrc,dists){
        ${linha('Romaneio',esc(r.codigo||'—'))}
        ${linha('Produtor',esc(assocNome(r.associado_id)))}
        ${linha('Produto',esc(prodNome(r.produto_id)))}
-       ${linha('Quantidade',NUM(r.quantidade)+' '+esc(prodUnid(r.produto_id)))}
+       ${linha('Quantidade recebida',NUM(r.quantidade)+' '+esc(prodUnid(r.produto_id)))}
+       ${dists.length?linha('Já distribuído',NUM(distribuido)+' '+esc(prodUnid(r.produto_id))):''}
+       ${linha('Saldo em estoque',`<b style="color:${saldo<=0?'#c0392b':'#1f5c24'}">${NUM(saldo)} ${esc(prodUnid(r.produto_id))}</b>`)}
        ${r.peso?linha('Peso / Gramagem',esc(r.peso)):''}
        ${linha('Data',dBR(r.data))}
        ${r.projeto_id?linha('Projeto',esc(projNome(r.projeto_id))):''}
