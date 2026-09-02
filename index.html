@@ -1179,7 +1179,9 @@ ROUTES.relatorios = async (v)=>{
     <div class="panel"><div class="panel-body filters" style="align-items:flex-end">
       <div><label style="display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px">Período de referência — De</label><input class="inp" type="date" id="relDe" value="${REL_DE}"></div>
       <div><label style="display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px">Até</label><input class="inp" type="date" id="relAte" value="${REL_ATE}"></div>
-      <span style="font-size:11.5px;color:var(--muted);max-width:340px">Aplica-se aos relatórios por data: recebimentos por produtor, rastreabilidade e fluxo de caixa.</span>
+      <span style="font-size:11.5px;color:var(--muted);max-width:300px">Aplica-se aos relatórios por data: recebimentos por produtor, rastreabilidade e fluxo de caixa.</span>
+      <div style="flex:1"></div>
+      <button class="btn" id="relCons">📄 Relatório consolidado (PDF)</button>
     </div></div>
     ${Object.keys(grp).map(g=>`<div class="panel"><div class="panel-head"><h3>${grp[g]}</h3></div>
       <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:8px">
@@ -1187,8 +1189,123 @@ ROUTES.relatorios = async (v)=>{
     <div id="relOut"></div>`;
   $('#relDe',v).onchange=e=>REL_DE=e.target.value;
   $('#relAte',v).onchange=e=>REL_ATE=e.target.value;
+  $('#relCons',v).onclick=()=>relatorioConsolidado();
   $$('[data-rel]',v).forEach(b=>b.onclick=()=>runRelatorio(b.dataset.rel,b.textContent));
 };
+
+// Relatório consolidado (imprime / salva em PDF)
+async function relatorioConsolidado(){
+  const de=REL_DE||('1900-01-01'), ate=REL_ATE||today();
+  toast('Montando relatório…');
+  await Promise.all([getProdutos(),getProjetos(),getAssociados()]);
+  const dentro=d=>d && d>=de && d<=ate;
+  const [assoc,estoque,receb,dist,lanc,proj,assoc2] = await Promise.all([
+    sb.from('aprotunas_associado').select('status'),
+    sb.from('aprotunas_v_estoque').select('*').order('nome'),
+    sb.from('aprotunas_recebimento').select('*').order('data'),
+    sb.from('aprotunas_distribuicao').select('*').order('data'),
+    sb.from('aprotunas_lancamento').select('*'),
+    sb.from('aprotunas_v_projeto_exec').select('*').order('nome'),
+    sb.from('aprotunas_associacao').select('*').limit(1).single()
+  ]);
+  const ac=assoc2.data||{};
+  const ativos=(assoc.data||[]).filter(a=>a.status==='ativo').length;
+  const inativos=(assoc.data||[]).filter(a=>a.status==='inativo').length;
+  const recP=(receb.data||[]).filter(r=>dentro(r.data));
+  const distP=(dist.data||[]).filter(d=>dentro(d.data));
+  const lancL=(lanc.data||[]).filter(l=>l.data_pagamento); // liquidados
+  const fluxoP=lancL.filter(l=>dentro(l.data_pagamento));
+  const entradas=fluxoP.filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor||0),0);
+  const saidas=fluxoP.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor||0),0);
+  const saldoIniC=0; // saldo de caixa global
+  const caixa=(lanc.data||[]).filter(l=>l.data_pagamento).reduce((s,l)=>s+(l.tipo==='receita'?1:-1)*Number(l.valor||0),0);
+  const aPagar=(lanc.data||[]).filter(l=>l.tipo==='despesa'&&!l.data_pagamento);
+  const aReceber=(lanc.data||[]).filter(l=>l.tipo==='receita'&&!l.data_pagamento);
+  const pagProdAberto=(lanc.data||[]).filter(l=>l.origem==='pagamento_produtor'&&!l.data_pagamento);
+  const pagProdPagoP=(lanc.data||[]).filter(l=>l.origem==='pagamento_produtor'&&dentro(l.data_pagamento));
+  const somaV=arr=>arr.reduce((s,x)=>s+Number(x.valor||0),0);
+
+  // agrega recebimentos por produtor
+  const recPorProd={}; recP.forEach(r=>{const m=recPorProd[r.associado_id]=recPorProd[r.associado_id]||{q:0,n:0};m.q+=Number(r.quantidade||0);m.n+=1;});
+
+  const money=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const num=n=>(Number(n)||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
+  const d2=d=>{if(!d)return'—';const p=String(d).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d;};
+  const ptab=(cols,rows,vazio)=>rows.length?`<table><thead><tr>${cols.map(c=>`<th class="${c.n?'r':''}">${c.h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td class="${c.n?'r':''}">${c.f(r)}</td>`).join('')}</tr>`).join('')}</tbody></table>`:`<p class="vazio">${vazio||'Sem dados no período.'}</p>`;
+
+  const w=window.open('','_blank');
+  if(!w){ toast('Permita pop-ups para gerar o PDF.',true); return; }
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório Consolidado APROTUNAS</title>
+   <style>
+    *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{margin:0;padding:28px;color:#22281f;font-size:12px}
+    .top{display:flex;align-items:center;gap:14px;border-bottom:2px solid #2e7d32;padding-bottom:12px;margin-bottom:6px}
+    .top img{height:52px}
+    .top h1{font-size:18px;color:#1f5c24;margin:0}
+    .top .sub{font-size:11px;color:#6b7565}
+    .meta{font-size:11px;color:#6b7565;margin-bottom:16px}
+    h2{font-size:13px;color:#1f5c24;border-bottom:1px solid #cdd5c3;padding-bottom:4px;margin:20px 0 8px}
+    .kpis{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px}
+    .kpi{border:1px solid #e2e7db;border-radius:8px;padding:8px 12px;min-width:150px}
+    .kpi .k{font-size:10px;color:#6b7565;text-transform:uppercase;letter-spacing:.3px}
+    .kpi .v{font-size:16px;font-weight:700;color:#1f5c24}
+    table{width:100%;border-collapse:collapse;margin-top:6px}
+    th,td{border-bottom:1px solid #eee;padding:5px 7px;text-align:left;font-size:11px}
+    th{background:#eef3ea;color:#4a5442;font-size:10px;text-transform:uppercase}
+    td.r,th.r{text-align:right}
+    .vazio{color:#8a9280;font-size:11px;font-style:italic}
+    .foot{margin-top:24px;border-top:1px solid #cdd5c3;padding-top:8px;font-size:10px;color:#8a9280;text-align:center}
+    .noprint{position:fixed;top:12px;right:12px}
+    .noprint button{padding:8px 16px;border:none;border-radius:8px;background:#2e7d32;color:#fff;font-weight:700;cursor:pointer}
+    @media print{.noprint{display:none} body{padding:12px}}
+   </style></head><body>
+   <div class="noprint"><button onclick="window.print()">🖨️ Salvar como PDF / Imprimir</button></div>
+   <div class="top"><img src="${LOGO_APROTUNAS}"><div><h1>Relatório Consolidado</h1><div class="sub">${esc(ac.nome||'APROTUNAS')}${ac.cnpj?' · CNPJ '+esc(ac.cnpj):''}</div></div></div>
+   <div class="meta">Período: <b>${d2(de)}</b> a <b>${d2(ate)}</b> · Emitido em ${d2(today())}</div>
+
+   <h2>Resumo</h2>
+   <div class="kpis">
+     <div class="kpi"><div class="k">Associados ativos</div><div class="v">${ativos}</div></div>
+     <div class="kpi"><div class="k">Saldo em caixa</div><div class="v">${money(caixa)}</div></div>
+     <div class="kpi"><div class="k">Entradas no período</div><div class="v">${money(entradas)}</div></div>
+     <div class="kpi"><div class="k">Saídas no período</div><div class="v">${money(saidas)}</div></div>
+     <div class="kpi"><div class="k">A pagar (aberto)</div><div class="v">${money(somaV(aPagar))}</div></div>
+     <div class="kpi"><div class="k">A receber (aberto)</div><div class="v">${money(somaV(aReceber))}</div></div>
+     <div class="kpi"><div class="k">A pagar produtores</div><div class="v">${money(somaV(pagProdAberto))}</div></div>
+   </div>
+
+   <h2>Estoque atual por produto</h2>
+   ${ptab([{h:'Produto',f:r=>esc(r.nome)},{h:'Un.',f:r=>esc(r.unidade)},{h:'Entradas',n:1,f:r=>num(r.entradas)},{h:'Saídas',n:1,f:r=>num(r.saidas)},{h:'Saldo',n:1,f:r=>num(r.saldo)}],(estoque.data||[]),'Sem produtos.')}
+
+   <h2>Recebimentos por produtor (no período)</h2>
+   ${ptab([{h:'Produtor',f:r=>esc(assocNome(r.k))},{h:'Recebimentos',n:1,f:r=>r.n},{h:'Qtd total',n:1,f:r=>num(r.q)}],Object.keys(recPorProd).map(k=>({k,...recPorProd[k]})).sort((a,b)=>b.q-a.q),'Nenhum recebimento no período.')}
+
+   <h2>Distribuições (no período)</h2>
+   ${ptab([{h:'Código',f:r=>esc(r.codigo)},{h:'Data',f:r=>d2(r.data)},{h:'Produto',f:r=>esc(prodNome(r.produto_id))},{h:'Qtd',n:1,f:r=>num(r.quantidade)+' '+esc(r.unidade||'')},{h:'Destino',f:r=>esc(r.local_entrega||'—')},{h:'Projeto',f:r=>esc(projNome(r.projeto_id))}],distP,'Nenhuma distribuição no período.')}
+
+   <h2>Fluxo de caixa (liquidado no período)</h2>
+   <div class="meta">Entradas ${money(entradas)} · Saídas ${money(saidas)} · Saldo do período ${money(entradas-saidas)}</div>
+   ${ptab([{h:'Data',f:r=>d2(r.data_pagamento)},{h:'Descrição',f:r=>esc(r.descricao)},{h:'Tipo',f:r=>r.tipo},{h:'Valor',n:1,f:r=>(r.tipo==='despesa'?'- ':'')+money(r.valor)}],fluxoP.sort((a,b)=>a.data_pagamento<b.data_pagamento?1:-1),'Nada liquidado no período.')}
+
+   <h2>Contas a pagar em aberto</h2>
+   ${ptab([{h:'Descrição',f:r=>esc(r.descricao)},{h:'Projeto',f:r=>esc(projNome(r.projeto_id))},{h:'Vencimento',f:r=>d2(r.data_vencimento)},{h:'Valor',n:1,f:r=>money(r.valor)}],aPagar,'Nada a pagar.')}
+
+   <h2>Contas a receber em aberto</h2>
+   ${ptab([{h:'Descrição',f:r=>esc(r.descricao)},{h:'Projeto',f:r=>esc(projNome(r.projeto_id))},{h:'Vencimento',f:r=>d2(r.data_vencimento)},{h:'Valor',n:1,f:r=>money(r.valor)}],aReceber,'Nada a receber.')}
+
+   <h2>Pagamentos ao produtor — em aberto</h2>
+   ${ptab([{h:'Descrição',f:r=>esc(r.descricao)},{h:'Produtor',f:r=>esc(assocNome(r.associado_id))},{h:'Valor',n:1,f:r=>money(r.valor)}],pagProdAberto,'Nenhum pagamento em aberto.')}
+
+   <h2>Pagamentos ao produtor — pagos no período</h2>
+   ${ptab([{h:'Data',f:r=>d2(r.data_pagamento)},{h:'Descrição',f:r=>esc(r.descricao)},{h:'Produtor',f:r=>esc(assocNome(r.associado_id))},{h:'Valor',n:1,f:r=>money(r.valor)}],pagProdPagoP.sort((a,b)=>a.data_pagamento<b.data_pagamento?1:-1),'Nenhum pagamento no período.')}
+
+   <h2>Execução dos projetos</h2>
+   ${ptab([{h:'Projeto',f:r=>esc(r.nome)},{h:'Tipo',f:r=>r.tipo},{h:'Global',n:1,f:r=>money(r.valor_global)},{h:'Recebido',n:1,f:r=>money(r.valor_recebido)},{h:'% físico',n:1,f:r=>num(r.pct_fisico)+'%'},{h:'% financ.',n:1,f:r=>num(r.pct_financeiro)+'%'}],(proj.data||[]),'Nenhum projeto.')}
+
+   <div class="foot">Relatório gerado pelo Sistema de Gestão APROTUNAS · ${d2(today())}</div>
+   </body></html>`);
+  w.document.close();
+}
 function relTable(title,cols,rows){
   const out=$('#relOut');
   const csv=[cols.map(c=>c.h).join(';'),...rows.map(r=>cols.map(c=>String(c.raw?c.raw(r):c.f(r)).replace(/<[^>]+>/g,'')).join(';'))].join('\n');
