@@ -909,7 +909,12 @@ async function etiquetaRecebimento(id){
   const {data:r}=await sb.from('aprotunas_recebimento').select('*').eq('id',id).single();
   if(!r){ toast('Recebimento não encontrado',true); return; }
   await Promise.all([getProdutos(),getAssociados(),getProjetos()]);
-  const {data:dists}=await sb.from('aprotunas_distribuicao_origem').select('quantidade,aprotunas_distribuicao(data,local_entrega,codigo,unidade,projeto_id)').eq('recebimento_id',id);
+  const {data:dists}=await sb.from('aprotunas_distribuicao_origem').select('id,quantidade,aprotunas_distribuicao(data,local_entrega,codigo,unidade,projeto_id)').eq('recebimento_id',id);
+  // status de pagamento ao produtor por romaneio (origem)
+  const _oids=(dists||[]).map(x=>x.id);
+  if(_oids.length){ const {data:_pgs}=await sb.from('aprotunas_lancamento').select('distribuicao_origem_id,data_pagamento').eq('origem','pagamento_produtor').in('distribuicao_origem_id',_oids);
+    const _pm={}; (_pgs||[]).forEach(pg=>_pm[pg.distribuicao_origem_id]=pg.data_pagamento);
+    (dists||[]).forEach(x=>x._pago=_pm[x.id]||null); }
   const holder=document.createElement('div'); holder.style.display='none'; document.body.appendChild(holder);
   const base=location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,'');
   const payload=`${base}rastreio.html?r=${encodeURIComponent(r.rastreio)}`;
@@ -971,7 +976,7 @@ function abrirEtiqueta(r,qrSrc,dists){
        ${r.projeto_id?linha('Projeto',esc(projNome(r.projeto_id))):''}
      </table>
      ${dists.length?`<div class="dest"><div class="dest-h">🚚 Distribuição / destino</div>
-       ${dists.map(x=>{const d=x.aprotunas_distribuicao||{};return `<div class="dest-i"><b>${esc(d.local_entrega||projNome(d.projeto_id)||'Destino')}</b><br><span class="m">Enviado em ${dBR(d.data)} · ${NUM(x.quantidade)} ${esc(d.unidade||'')}</span></div>`;}).join('')}
+       ${dists.map(x=>{const d=x.aprotunas_distribuicao||{};const pg=x._pago?`<br><span style="color:#1f5c24;font-weight:700">✔ Produtor pago em ${dBR(x._pago)}</span>`:`<br><span style="color:#b57e0e;font-weight:600">Pagamento ao produtor pendente</span>`;return `<div class="dest-i"><b>${esc(d.local_entrega||projNome(d.projeto_id)||'Destino')}</b><br><span class="m">Enviado em ${dBR(d.data)} · ${NUM(x.quantidade)} ${esc(d.unidade||'')}</span>${pg}</div>`;}).join('')}
      </div>`:''}
      <div class="ft">Rastreabilidade APROTUNAS · recebimento → distribuição</div>
    </div>
