@@ -1006,7 +1006,6 @@ ROUTES.financeiro = async (v)=>{
       <button data-s="lancamentos" class="${FIN_SUB==='lancamentos'?'active':''}">Lançamentos</button>
       <button data-s="pagar" class="${FIN_SUB==='pagar'?'active':''}">Contas a pagar</button>
       <button data-s="receber" class="${FIN_SUB==='receber'?'active':''}">Contas a receber</button>
-      <button data-s="contas" class="${FIN_SUB==='contas'?'active':''}">Contas/Caixa</button>
     </div><div id="finPane"></div>`;
   $$('#finSubs button').forEach(b=>b.onclick=()=>{FIN_SUB=b.dataset.s;$$('#finSubs button').forEach(x=>x.classList.toggle('active',x===b));paintFin();});
   paintFin();
