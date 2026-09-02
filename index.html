@@ -796,6 +796,7 @@ async function etiquetaRecebimento(id){
   const {data:r}=await sb.from('aprotunas_recebimento').select('*').eq('id',id).single();
   if(!r){ toast('Recebimento não encontrado',true); return; }
   await Promise.all([getProdutos(),getAssociados(),getProjetos()]);
+  const {data:dists}=await sb.from('aprotunas_distribuicao_origem').select('quantidade,aprotunas_distribuicao(data,local_entrega,codigo,unidade,projeto_id)').eq('recebimento_id',id);
   const holder=document.createElement('div'); holder.style.display='none'; document.body.appendChild(holder);
   const base=location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,'');
   const payload=`${base}rastreio.html?r=${encodeURIComponent(r.rastreio)}`;
@@ -804,10 +805,11 @@ async function etiquetaRecebimento(id){
   setTimeout(()=>{
     const el=holder.querySelector('canvas')||holder.querySelector('img');
     const qrSrc = el ? (el.tagName==='CANVAS'? el.toDataURL('image/png') : el.src) : '';
-    holder.remove(); abrirEtiqueta(r,qrSrc);
+    holder.remove(); abrirEtiqueta(r,qrSrc,dists||[]);
   },250);
 }
-function abrirEtiqueta(r,qrSrc){
+function abrirEtiqueta(r,qrSrc,dists){
+  dists=dists||[];
   const w=window.open('','_blank','width=430,height=640');
   if(!w){ toast('Permita pop-ups para abrir a etiqueta.',true); return; }
   const linha=(k,v)=>`<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`;
@@ -829,6 +831,10 @@ function abrirEtiqueta(r,qrSrc){
     td{padding:3px 2px;border-bottom:1px dashed #e2e7db;vertical-align:top}
     td.k{color:#6b7565;width:40%}
     td.v{font-weight:600;text-align:right}
+    .dest{margin-top:10px;border-top:1px solid #cdd5c3;padding-top:8px}
+    .dest-h{font-size:10px;letter-spacing:1px;color:#6b7565;text-transform:uppercase;margin-bottom:6px}
+    .dest-i{background:#e8f2e4;border-radius:8px;padding:7px 9px;margin-bottom:6px;font-size:12px;color:#1f5c24}
+    .dest-i .m{color:#4a5442;font-weight:400}
     .ft{text-align:center;font-size:10px;color:#8a9280;margin-top:8px}
     .noprint{text-align:center;margin-top:12px}
     .noprint button{padding:8px 16px;border:none;border-radius:8px;background:#2e7d32;color:#fff;font-weight:700;cursor:pointer}
@@ -847,6 +853,9 @@ function abrirEtiqueta(r,qrSrc){
        ${linha('Data',dBR(r.data))}
        ${r.projeto_id?linha('Projeto',esc(projNome(r.projeto_id))):''}
      </table>
+     ${dists.length?`<div class="dest"><div class="dest-h">🚚 Distribuição / destino</div>
+       ${dists.map(x=>{const d=x.aprotunas_distribuicao||{};return `<div class="dest-i"><b>${esc(d.local_entrega||projNome(d.projeto_id)||'Destino')}</b><br><span class="m">Enviado em ${dBR(d.data)} · ${NUM(x.quantidade)} ${esc(d.unidade||'')}</span></div>`;}).join('')}
+     </div>`:''}
      <div class="ft">Rastreabilidade APROTUNAS · recebimento → distribuição</div>
    </div>
    <div class="noprint"><button onclick="window.print()">🖨️ Imprimir etiqueta</button></div>
