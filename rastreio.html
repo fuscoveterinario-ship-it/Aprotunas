@@ -30,7 +30,6 @@ body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--text);
 dl{display:grid;grid-template-columns:auto 1fr;gap:11px 16px;margin:0;font-size:14px}
 dt{color:var(--muted);font-weight:600}
 dd{margin:0;text-align:right;font-weight:600}
-.ic{margin-right:6px}
 .dist{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .dist-h{font-size:11px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
 .dist-item{background:var(--green-l);border-radius:10px;padding:10px 12px;margin-bottom:8px}
@@ -81,15 +80,15 @@ async function run(){
       <div class="prod"><div class="nome">${esc(d.produto)}</div>
         <div class="qt">${NUM(d.quantidade)} ${esc(d.unidade||'')}${d.gramagem?' · '+esc(d.gramagem):''}</div></div>
       <dl>
-        <dt><span class="ic">👨‍🌾</span>Produtor</dt><dd>${esc(d.produtor)}</dd>
-        <dt><span class="ic">📍</span>Origem</dt><dd>${esc(d.municipio||'—')}${d.uf?'/'+esc(d.uf):''}</dd>
-        <dt><span class="ic">📅</span>Recebido em</dt><dd>${dBR(d.data)}</dd>
-        ${d.projeto?`<dt><span class="ic">🏫</span>Projeto</dt><dd>${esc(d.projeto)}</dd>`:''}
-        <dt><span class="ic">📦</span>Em estoque</dt><dd><b style="color:${saldo<=0?'#c0392b':'var(--green-d)'}">${NUM(saldo)} ${esc(d.unidade||'')}</b></dd>
+        <dt>Produtor</dt><dd>${esc(d.produtor)}</dd>
+        <dt>Origem</dt><dd>${esc(d.municipio||'—')}${d.uf?'/'+esc(d.uf):''}</dd>
+        <dt>Recebido em</dt><dd>${dBR(d.data)}</dd>
+        ${d.projeto?`<dt>Projeto</dt><dd>${esc(d.projeto)}</dd>`:''}
+        <dt>Em estoque</dt><dd><b style="color:${saldo<=0?'#c0392b':'var(--green-d)'}">${NUM(saldo)} ${esc(d.unidade||'')}</b></dd>
       </dl>
       ${(d.distribuicoes&&d.distribuicoes.length)?`
       <div class="dist">
-        <div class="dist-h">🚚 Para onde foi</div>
+        <div class="dist-h">Para onde foi</div>
         ${d.distribuicoes.map(x=>`<div class="dist-item">
           <div class="dest">${esc(x.local||x.projeto||'Destino')}</div>
           <div class="meta">Enviado em <b>${dBR(x.data)}</b> · ${NUM(x.quantidade)} ${esc(x.unidade||'')}${x.projeto&&x.local?' · '+esc(x.projeto):''}</div>
