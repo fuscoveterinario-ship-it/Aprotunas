@@ -114,9 +114,14 @@
   .sobre-txt p{margin:0 0 18px; font-size:17.5px;}
   .sobre-txt p:last-child{margin-bottom:0;}
   .pilares{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-  .pilar{background:var(--branco); border:1px solid var(--linha); border-radius:var(--raio); padding:22px; box-shadow:var(--sombra-sm);}
-  .pilar .ic{width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:22px;
-    background:var(--favo); border-radius:12px; margin-bottom:14px;}
+  .pilar{background:var(--branco); border:1px solid var(--linha); border-radius:var(--raio); overflow:hidden; box-shadow:var(--sombra-sm);}
+  .pilar-media{position:relative; margin:0; aspect-ratio:16/10; overflow:hidden; background:var(--favo);}
+  .pilar-media img{display:block; width:100%; height:100%; object-fit:cover; transition:transform .25s ease;}
+  .pilar:hover .pilar-media img{transform:scale(1.025);}
+  .pilar-credito{position:absolute; right:6px; bottom:6px; max-width:calc(100% - 12px); padding:3px 6px;
+    border-radius:5px; background:rgba(16,44,24,.76); color:#fff; font-size:8px; line-height:1.25; text-align:right;}
+  .pilar-credito a{color:inherit; text-decoration:none;}
+  .pilar-corpo{padding:18px 20px 22px;}
   .pilar h3{font-family:'Inter',sans-serif; font-size:16.5px; font-weight:700; color:var(--marrom); margin-bottom:6px;}
   .pilar p{margin:0; font-size:14.5px; color:var(--marrom-txt); line-height:1.5;}
 
@@ -232,20 +237,47 @@
     <div class="wrap">
       <div class="cabeca">
         <span class="tag">Nossa história</span>
-        <h2>De produtores vizinhos a uma associação forte.</h2>
-        <p>A história da APROTUNAS é a história de famílias de Tunas do Paraná que decidiram caminhar juntas.</p>
+        <h2>Uma história que nasce da união e floresce na Mata Atlântica.</h2>
+        <p>Desde 2008, a APROTUNAS reúne famílias produtoras de Tunas do Paraná que encontraram no associativismo um caminho para fortalecer a produção rural e contribuir para o desenvolvimento do município.</p>
       </div>
       <div class="sobre-grid">
         <div class="sobre-txt">
-          <p>A <strong>Associação dos Produtores Rurais de Tunas do Paraná (APROTUNAS)</strong> nasceu do encontro de produtores vizinhos que já viviam da terra e da criação de abelhas e queriam ir além do trabalho individual. Da vontade de vender melhor, produzir com qualidade e ter voz diante de compradores e do poder público, veio a decisão de se organizar em associação.</p>
-          <p>O caminho começou com o mel. Com apoio técnico no apiário, boas práticas e inspeção sanitária, os associados passaram a colher, envasar e comercializar de forma coletiva — ganhando escala e abrindo portas que, sozinhos, dificilmente alcançariam. Cada lote passou a carregar número de rastreio, para que o consumidor conheça a origem do que leva para casa.</p>
-          <p>Com o tempo, a produção se diversificou: às abelhas somaram-se os <strong>vegetais processados</strong>, ampliando a renda das famílias e a oferta da associação. Hoje a APROTUNAS leva a produção de Tunas do Paraná também a mercados institucionais, como a alimentação escolar e os programas de compra da agricultura familiar (PNAE e PAA).</p>
+          <p>A <strong>Associação dos Produtores Rurais de Tunas do Paraná (APROTUNAS)</strong> nasceu na comunidade de Ouro Fino, a partir da união de agricultores que perceberam que, trabalhando juntos, poderiam melhorar a produção, compartilhar conhecimentos e conquistar novas oportunidades de comercialização.</p>
+          <p>Com o passar dos anos, essa cooperação se transformou em capacitação, organização e acesso a novos mercados. Na apicultura, o trabalho coletivo permitiu aprimorar o manejo, o beneficiamento e a gestão, construir uma identidade própria para o <strong>Mel de Tunas</strong> e avançar na regularização sanitária da produção.</p>
+          <p>Tunas do Paraná está localizada entre as montanhas e os vales profundos do <strong>Vale do Ribeira</strong>, em um dos cenários mais exuberantes da <strong>Mata Atlântica</strong>. O município abriga parte do Parque Estadual das Lauráceas, maior parque estadual do Paraná, com mais de 30 mil hectares protegidos e importantes remanescentes de Floresta Ombrófila Densa.</p>
+          <p>Levantamentos realizados no parque registraram 750 espécies da flora, 291 espécies de aves e 76 espécies de mamíferos. Essa extraordinária biodiversidade forma um ambiente rico em vegetação e diferentes floradas, dando ao Mel de Tunas do Paraná uma identidade profundamente ligada à Mata Atlântica e ao território onde é produzido.</p>
+          <p>Cada lote é beneficiado com boas práticas, inspeção sanitária e rastreabilidade, levando ao consumidor um alimento com origem conhecida e vínculo direto com as famílias produtoras.</p>
+          <p>Hoje, a APROTUNAS reúne famílias que produzem mel, derivados das abelhas e vegetais processados. Mais do que comercializar produtos, a associação fortalece a agricultura familiar, amplia as oportunidades de renda e apresenta Tunas do Paraná a novos consumidores por meio da qualidade de sua produção.</p>
         </div>
         <div class="pilares">
-          <div class="pilar"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2.6l7.8 4.5v9L12 20.6 4.2 16.1v-9z"/></svg></div><h3>Apicultura e meliponicultura</h3><p>Mel de abelhas com ferrão e de abelhas nativas sem ferrão.</p></div>
-          <div class="pilar"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2.6l7.8 4.5v9L12 20.6 4.2 16.1v-9z"/></svg></div><h3>Rastreabilidade</h3><p>Do recebimento à entrega, com número de rastreio por lote.</p></div>
-          <div class="pilar"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2.6l7.8 4.5v9L12 20.6 4.2 16.1v-9z"/></svg></div><h3>Mercados institucionais</h3><p>Acesso a programas como PNAE e PAA da agricultura familiar.</p></div>
-          <div class="pilar"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2.6l7.8 4.5v9L12 20.6 4.2 16.1v-9z"/></svg></div><h3>Gestão organizada</h3><p>Associados, estoque, projetos e financeiro em um só sistema.</p></div>
+          <article class="pilar">
+            <figure class="pilar-media">
+              <img src="https://pr.agenciasebrae.com.br/wp-content/uploads/sites/16/2024/11/Mel-Tunas-PR-02-Apicultores-scaled.jpeg" alt="Apicultores de Tunas do Paraná reunidos com representantes do Sebrae e do município" loading="lazy" decoding="async">
+              <figcaption class="pilar-credito">Foto: Divulgação / Sebrae PR</figcaption>
+            </figure>
+            <div class="pilar-corpo"><h3>União desde 2008</h3><p>Famílias produtoras trabalhando juntas pelo desenvolvimento de Tunas do Paraná.</p></div>
+          </article>
+          <article class="pilar">
+            <figure class="pilar-media">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/Mata-Atl%C3%A2ntica-Parque_Estadual_Alto_Ribeira-_Iporanga_-_Brasil.JPG" alt="Vegetação exuberante da Mata Atlântica no Alto Ribeira" loading="lazy" decoding="async">
+              <figcaption class="pilar-credito"><a href="https://commons.wikimedia.org/wiki/File:Mata-Atl%C3%A2ntica-Parque_Estadual_Alto_Ribeira-_Iporanga_-_Brasil.JPG" target="_blank" rel="noopener noreferrer">Foto: Cláudia R. Madella-Auricchio / CC BY-SA 3.0</a></figcaption>
+            </figure>
+            <div class="pilar-corpo"><h3>Mata Atlântica</h3><p>Uma produção ligada à biodiversidade e às floradas do Vale do Ribeira.</p></div>
+          </article>
+          <article class="pilar">
+            <figure class="pilar-media">
+              <img src="https://pr.agenciasebrae.com.br/wp-content/uploads/sites/16/2024/11/Mel-Tunas-PR-01-scaled.jpeg" alt="Mel de Tunas do Paraná apresentado por produtores da associação" loading="lazy" decoding="async">
+              <figcaption class="pilar-credito">Foto: Divulgação / Sebrae PR</figcaption>
+            </figure>
+            <div class="pilar-corpo"><h3>Qualidade e origem</h3><p>Boas práticas, inspeção sanitária e rastreabilidade em cada lote.</p></div>
+          </article>
+          <article class="pilar">
+            <figure class="pilar-media">
+              <img src="https://pr.agenciasebrae.com.br/wp-content/uploads/sites/16/2025/08/Feira-Sabores-25-Mel-tunas-scaled.jpg" alt="Representantes da APROTUNAS apresentando seus produtos em uma feira" loading="lazy" decoding="async">
+              <figcaption class="pilar-credito">Foto: Inove / Sebrae PR</figcaption>
+            </figure>
+            <div class="pilar-corpo"><h3>Novos mercados</h3><p>Organização coletiva para ampliar as vendas, gerar renda e valorizar o município.</p></div>
+          </article>
         </div>
       </div>
     </div>
